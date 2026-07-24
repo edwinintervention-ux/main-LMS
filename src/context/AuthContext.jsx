@@ -13,18 +13,26 @@ export function AuthProvider({ children }) {
   const [error,    setError]    = useState(null);
 
   // ── Load worker profile from workers table ──────────────────
-  // Matches by auth_user_id first, falls back to email.
-  // Also backfills auth_user_id on the row if it was missing,
-  // so future lookups are fast and RLS auth.uid() checks work.
+  // In the current schema, workers.id IS the auth.uid() (UUID FK to auth.users).
+  // Falls back to email lookup for legacy compatibility.
   const loadWorker = useCallback(async (userId, userEmail) => {
     if (!supabase) return;
 
-    // Using maybeSingle() instead of single() to avoid 406 errors if the worker is not found
+    // Primary lookup: id = auth.uid()
     let { data, error } = await supabase
       .from('workers')
       .select('*')
-      .or(`auth_user_id.eq.${userId},email.ilike."${userEmail}"`)
+      .eq('id', userId)
       .maybeSingle();
+
+    // Fallback: match by email if id lookup returns nothing
+    if (!data && !error) {
+      ({ data, error } = await supabase
+        .from('workers')
+        .select('*')
+        .ilike('email', userEmail)
+        .maybeSingle());
+    }
 
     if (error) {
       console.error('[AuthContext] loadWorker Error:', error.message);
@@ -35,21 +43,11 @@ export function AuthProvider({ children }) {
       console.warn('[AuthContext] No worker profile found for:', userEmail);
     } else if (data) {
       // ── Security: Force-sign-out deactivated / suspended accounts ──────────
-      // The Supabase Auth session stays valid even after admin deactivates the
-      // worker record. We must revoke it here at the app layer.
       if (data.status && data.status !== 'Active') {
         console.warn(`[AuthContext] Account deactivated (${data.status}). Signing out: ${data.email}`);
         await supabase.auth.signOut();
         setWorker(null);
         return;
-      }
-
-      // Backfill auth_user_id (Fire-and-forget to avoid blocking the UI)
-      if (!data.auth_user_id) {
-        supabase.from('workers').update({ auth_user_id: userId }).eq('id', data.id).then(({error}) => {
-          if (!error) console.log(`[AuthContext] Successfully backfilled auth_user_id for: ${data.name}`);
-        });
-        data.auth_user_id = userId;
       }
     }
 
