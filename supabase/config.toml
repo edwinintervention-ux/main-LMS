@@ -1,0 +1,43 @@
+[functions.mpesa-c2b-callback]
+verify_jwt = false
+
+[functions.daraja-c2b-callback]
+verify_jwt = false
+
+[functions.daraja-stk-callback]
+verify_jwt = false
+
+[functions.send-recovery-auth]
+verify_jwt = false
+
+[functions.admin-force-reset]
+verify_jwt = false
+
+[functions.send-admin-otp]
+verify_jwt = false
+
+[functions.verify-admin-otp]
+verify_jwt = false
+
+[functions.automated-reminders]
+verify_jwt = false
+
+[functions.mpesa-b2c-callback]
+verify_jwt = false
+
+[functions.mpesa-reversal-callback]
+verify_jwt = false
+
+[functions.mpesa-balance-callback]
+verify_jwt = false
+
+[functions.fix-db-logic]
+enabled = true
+verify_jwt = true
+import_map = "./functions/fix-db-logic/deno.json"
+# Uncomment to specify a custom file path to the entrypoint.
+# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
+entrypoint = "./functions/fix-db-logic/index.ts"
+# Specifies static files to be bundled with the function. Supports glob patterns.
+# For example, if you want to serve static HTML pages in your function:
+# static_files = [ "./functions/fix-db-logic/*.html" ]

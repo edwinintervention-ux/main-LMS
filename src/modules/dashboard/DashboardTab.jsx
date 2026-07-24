@@ -1,0 +1,1156 @@
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Home, TrendingUp, AlertTriangle, CheckCircle, BarChart, HardHat, User, UserPlus, Clock, Target, Activity, Wallet, RefreshCw } from 'lucide-react';
+import { T, SC, RC, SFX, Card, CH, KPI, DT, Btn, Badge, Av, Bar, BackBtn, RefreshBtn,
+  FI, PhoneInput, NumericInput, Search, Pills, Alert, Dialog, ConfirmDialog, ToastContainer,
+  LoanModal, LoanForm, RepayTracker, LivePortfolioChart, WeeklyCollectionsChart,
+  fmt, fmtM, now, localDateStr, ts, uid, escHtml, toCSV, dlCSV, buildFullBackup,
+  calculateLoanStatus, deriveDashboardMetrics,
+  sbWrite, sbInsert,
+  toSupabaseLoan, toSupabaseCustomer, toSupabasePayment, toSupabaseInteraction,
+  generateLoanAgreementHTML, generateAssetListHTML, downloadLoanDoc,
+  useContactPopup, useToast, useReminders, useModalLock } from '@/lms-common';
+
+
+const LiveClock = () => {
+  const [time, setTime] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setTime(new Date()), 50);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      background: 'rgba(255,255,255,0.03)',
+      border: `1px solid ${T.accent}30`,
+      borderRadius: 16,
+      padding: '10px 18px',
+      minWidth: 160,
+      backdropFilter: 'blur(10px)',
+      boxShadow: `0 8px 32px ${T.accent}10`,
+      transition: 'all 0.3s ease'
+    }}>
+      <Clock size={16} color={T.accent} />
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ color: T.txt, fontSize: 18, fontWeight: 900, fontFamily: T.mono, letterSpacing: -0.5, lineHeight: 1, display: 'flex', alignItems: 'baseline' }}>
+          {time.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          <span style={{ fontSize: '0.85em', opacity: 0.7, marginLeft: 2 }}>
+            .{Math.floor(time.getMilliseconds() / 10).toString().padStart(2, '0')}
+          </span>
+        </div>
+        <div style={{ color: T.accent, fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1.2, marginTop: 4, opacity: 0.8 }}>
+          Real-time System
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DashboardTab = ({adminUser,loans,setLoans,customers,setCustomers,payments,setPayments,workers,interactions,setInteractions,stkRequests=[],b2cDisbursements=[],onNav,scrollTop,addAudit,onOpenCustomerProfile,onRefresh,targets=[],setTargets}) => {
+  const {open:openContact, Popup:ContactPopup} = useContactPopup();
+  const { show: showToast } = useToast();
+  const [drill,setDrillRaw]=useState(null);
+  const setDrill = (d) => { setDrillRaw(d); if(d) setTimeout(()=>{ try{scrollTop?.();}catch(e){} },20); };
+  const [selOverdue,setSelOverdue]=useState(null);
+  const [selLoan,setSelLoanRaw]=useState(null);
+  const [showTargetModal, setShowTargetModal] = useState(false);
+  const [newTargetAmt, setNewTargetAmt] = useState('');
+  const [savingTarget, setSavingTarget] = useState(false);
+  const setSelLoan = (l) => { 
+    setSelLoanRaw(l); 
+    if(l) {
+       window.scrollTo({ top: 0, behavior: 'instant' });
+       try { scrollTop?.(); } catch(e) {}
+    }
+  };
+  const setSelCust = (c) => onOpenCustomerProfile?.(c.id);
+
+  const [paybillBalance, setPaybillBalance] = useState({ working: 0, utility: 0, lastUpdate: null, updating: false });
+  const pollRef = useRef(null);
+
+  const handleCheckBalance = async () => {
+    if (paybillBalance.updating) return;
+    setPaybillBalance(prev => ({ ...prev, updating: true }));
+    if (pollRef.current) clearInterval(pollRef.current);
+
+    try {
+      console.log('[Dashboard] Triggering balance sync...');
+      const { checkAccountBalance } = await import('@/utils/mpesa');
+      const res = await checkAccountBalance();
+      
+      if (!res.success) throw new Error(res.message || 'Trigger failed');
+
+      showToast('Balance sync sent to Safaricom. Refreshing...', 'info');
+
+      const { supabase: sb } = await import('@/config/supabaseClient');
+      if (!sb) {
+        setPaybillBalance(prev => ({ ...prev, updating: false }));
+        return;
+      }
+
+      const snapshot = paybillBalance.lastUpdate;
+      let attempts = 0;
+      
+      pollRef.current = setInterval(async () => {
+        attempts++;
+        try {
+          const { data, error } = await sb.from('paybill_balance').select('utility_balance, working_balance, last_updated').eq('id', 1).single();
+          if (error) throw error;
+
+          if (data && data.last_updated !== snapshot) {
+            console.log('[Dashboard] Balance sync detected change:', data.last_updated);
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+            setPaybillBalance(prev => ({ ...prev, utility: data.utility_balance, working: data.working_balance, lastUpdate: data.last_updated, updating: false }));
+            showToast(`Balance updated: KES ${(data.utility_balance || 0).toLocaleString()}`, 'success');
+          } else if (attempts >= 20) {
+            // 60s elapsed
+            console.warn('[Dashboard] Balance sync poll timed out after 60s');
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+            setPaybillBalance(prev => ({ ...prev, updating: false }));
+          }
+        } catch (pollErr) { 
+          console.error('[Dashboard] Poll error:', pollErr.message);
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+          setPaybillBalance(prev => ({ ...prev, updating: false })); 
+        }
+      }, 3000);
+    } catch (e) {
+      setPaybillBalance(prev => ({ ...prev, updating: false }));
+      console.error('Failed to trigger balance check:', e.message);
+      showToast(`M-Pesa Sync Error: ${e.message}`, 'danger');
+    }
+  };
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const { supabase } = await import('@/config/supabaseClient');
+        const { data } = await supabase.from('paybill_balance').select('*').eq('id', 1).single();
+        if (data) {
+          setPaybillBalance(prev => ({ ...prev, working: data.working_balance, utility: data.utility_balance, lastUpdate: data.last_updated }));
+          
+          // Removed auto-trigger on mount to prevent accidental Safaricom account locks 
+          // due to stale credentials. Balance sync must be triggered manually via 'Live Sync' button.
+        }
+      } catch (e) { }
+    };
+    fetchBalance();
+
+    let sub;
+    import('@/config/supabaseClient').then(({ supabase }) => {
+      if (!supabase) return;
+      sub = supabase.channel('balance_sub')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'paybill_balance' }, (p) => {
+           setPaybillBalance(prev => ({ ...prev, working: p.new.working_balance, utility: p.new.utility_balance, lastUpdate: p.new.last_updated, updating: false }));
+        }).subscribe();
+    });
+
+    return () => { 
+      if (sub) sub.unsubscribe(); 
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  const dashDerived = useMemo(() => {
+    console.log('[DashboardTab] Recalculating metrics...', { 
+      loansCount: loans?.length, 
+      paymentsCount: payments?.length,
+      customersCount: customers?.length 
+    });
+    const d = deriveDashboardMetrics(loans, payments, customers);
+    console.log('[DashboardTab] Metrics derived:', {
+      book: d.book,
+      active: d.active,
+      overdue: d.overdue,
+      coll: d.coll
+    });
+
+    // Context-specific chart drills (Location, Type) still need local logic but
+    // should use the base calculated metrics for consistency.
+    const par = (days) => {
+      if (d.parTotal === 0) return "0.0";
+      const count = loans.filter((l) => {
+        const stats = calculateLoanStatus(l, null, d.paidMap[l.id] || 0);
+        return stats.overdueDays >= days && !stats.isSettled && !stats.isWrittenOff;
+      }).length;
+      return ((count / d.parTotal) * 100).toFixed(1);
+    };
+
+    const getBaseLoc = (loc) => loc ? loc.split(' | ')[0].trim() : '';
+    const locs = [...new Set(customers.map((c) => getBaseLoc(c.location)).filter(Boolean))]
+      .map((baseLoc) => {
+        const lc = loans.filter((l) => {
+          const c = customers.find(cu => cu.id === (l.customerId || l.customer_id));
+          return c && getBaseLoc(c.location) === baseLoc;
+        });
+        const od = lc.filter((l) => {
+          const e = calculateLoanStatus(l, null, d.paidMap[l.id] || 0);
+          return e.overdueDays > 0 && !e.isSettled && !e.isWrittenOff;
+        }).length;
+        return {
+          loc: baseLoc,
+          rate: lc.length ? +((od / lc.length) * 100).toFixed(1) : 0,
+          n: lc.length,
+        };
+      })
+      .sort((a, b) => b.rate - a.rate);
+
+    const byType = ["Daily", "Weekly", "Biweekly", "Monthly", "Lump Sum"]
+      .map((rt) => {
+        const ls = loans.filter((l) => {
+          if (l.repaymentType !== rt) return false;
+          const e = calculateLoanStatus(l, null, d.paidMap[l.id] || 0);
+          return !e.isSettled && !e.isWrittenOff;
+        });
+        const paid = payments
+          .filter((p) => ls.some((l) => l.id === p.loanId))
+          .reduce((s, p) => s + p.amount, 0);
+        const balance = ls.reduce(
+          (s, l) =>
+            s + calculateLoanStatus(l, null, d.paidMap[l.id] || 0).totalAmountDue,
+          0,
+        );
+        return { type: rt, count: ls.length, paid, balance };
+      })
+      .filter((x) => x.count > 0);
+
+    const todayStr = new Date().toLocaleDateString("en-KE", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    return {
+      ...d,
+      par,
+      locs,
+      byType,
+      todayStr,
+    };
+  }, [loans, payments, customers, workers]);
+  const {
+    activeList,
+    book,
+    ovList,
+    ovAmt,
+    coll,
+    parTotal,
+    par,
+    collRate,
+    locs,
+    byType,
+    todayStr,
+    paidMap,
+    activeBorrowersCount,
+    pendingApprovals,
+  } = dashDerived;
+
+  // ── Monthly Target derived from targets[] prop ─────────────────────────────
+  const currentMonthKey = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 7); // e.g. "2026-04"
+  const currentMonthTarget = useMemo(() => (targets || []).find(t => t.month === currentMonthKey), [targets, currentMonthKey]);
+  const totalTgt = currentMonthTarget?.total_target_amount || 0;
+  const curDisb = useMemo(() => {
+    const thisMonthStart = currentMonthKey + '-01';
+    const nextMonthStart = new Date(new Date(thisMonthStart).setMonth(new Date(thisMonthStart).getMonth() + 1)).toISOString().slice(0, 10);
+    return (loans || [])
+      .filter(l => l.disbursed && l.disbursed >= thisMonthStart && l.disbursed < nextMonthStart)
+      .reduce((s, l) => s + (l.amount || 0), 0);
+  }, [loans, currentMonthKey]);
+  const tgtPct = totalTgt > 0 ? Math.round((curDisb / totalTgt) * 100) : 0;
+
+  // ── Save Monthly Target ────────────────────────────────────────────────────
+  const handleSaveTarget = async () => {
+    const amt = parseFloat(newTargetAmt);
+    if (!amt || amt <= 0) return;
+    setSavingTarget(true);
+    try {
+      const { supabase } = await import('@/config/supabaseClient');
+      const row = { month: currentMonthKey, total_target_amount: amt };
+      const { error } = await supabase.from('monthly_targets').upsert(row, { onConflict: 'month' });
+      if (error) throw error;
+      setTargets?.(prev => {
+        const others = prev.filter(t => t.month !== currentMonthKey);
+        return [...others, row];
+      });
+      addAudit?.('Set Monthly Target', 'System', `Target for ${currentMonthKey} set to KES ${amt.toLocaleString()}`);
+      setShowTargetModal(false);
+      setNewTargetAmt('');
+    } catch (e) {
+      alert('Failed to save target: ' + e.message);
+    }
+    setSavingTarget(false);
+  };
+
+  const paymentHealth = useMemo(() => {
+    const total = (stkRequests?.length || 0) + (b2cDisbursements?.length || 0);
+    if (total === 0) return 100;
+    const failed = (stkRequests?.filter(r => r.status === 'Failed')?.length || 0) + 
+                 (b2cDisbursements?.filter(r => r.status === 'Failed')?.length || 0);
+    return Math.max(0, Math.round(((total - failed) / total) * 100));
+  }, [stkRequests, b2cDisbursements]);
+
+  // todayP is UI-specific — computed locally rather than cluttering the shared engine
+  const todayP = payments.filter((p) => (localDateStr(p.date) === now()) && p.status === 'Allocated').reduce((s, p) => s + p.amount, 0);
+
+  // FIX — ClickName was a component defined inside ADashboard's render body.
+  // Converted to a plain render function to avoid new-type-on-every-render remounting.
+  const renderClickName = ({ name, phone }) => (
+    <span
+      onClick={(e) => {
+        e.stopPropagation();
+        openContact(name, phone, e, null, customers.find(c => c.name === name || c.phone === phone)?.id);
+      }}
+      style={{
+        color: T.accent,
+        cursor: "pointer",
+        fontWeight: 600,
+        borderBottom: `1px dashed ${T.accent}50`,
+      }}
+      title="Click to call/message"
+    >
+      {name}
+    </span>
+  );
+
+  const custPhone = (l) => customers.find((c) => c.id === (l.customerId || l.customer_id))?.phone || "";
+
+  return (
+    <div className="fu">
+      {ContactPopup}
+      {drill && (
+        <div
+          className="dialog-backdrop"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9900,
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "center",
+            padding: 0,
+            backdropFilter: "var(--glass-blur)",
+            WebkitBackdropFilter: "var(--glass-blur)",
+            background: "rgba(4,8,16,0.75)",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            className="pop"
+            style={{
+              background: T.card,
+              borderTop: `1px solid ${T.hi}`,
+              borderRight: `1px solid ${T.hi}`,
+              borderLeft: `1px solid ${T.hi}`,
+              borderBottom: `1px solid ${T.border}`,
+              borderRadius: "0 0 20px 20px",
+              width: "100%",
+              maxWidth: "100%",
+              maxHeight: "82vh",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 24px 64px #000000E0",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "14px 18px",
+                borderBottom: `1px solid ${T.border}`,
+                flexShrink: 0,
+                background: T.card,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {drill.color && (
+                  <div
+                    style={{
+                      width: 4,
+                      height: 20,
+                      borderRadius: 99,
+                      background: drill.color,
+                    }}
+                  />
+                )}
+                <h3
+                  style={{
+                    color: T.txt,
+                    fontSize: 15,
+                    fontWeight: 800,
+                    fontFamily: T.head,
+                    margin: 0,
+                  }}
+                >
+                  {drill.title}
+                </h3>
+                <span
+                  style={{
+                    background: T.hi,
+                    color: T.muted,
+                    borderRadius: 99,
+                    padding: "2px 8px",
+                    fontSize: 11,
+                    fontFamily: T.mono,
+                  }}
+                >
+                  {drill.rows?.length ?? 0}
+                </span>
+              </div>
+              <button
+                onClick={() => setDrill(null)}
+                style={{
+                  background: T.card2,
+                  border: `1px solid ${T.border}`,
+                  color: T.muted,
+                  borderRadius: 99,
+                  width: 28,
+                  height: 28,
+                  cursor: "pointer",
+                  fontSize: 13,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", overflowX: "auto" }}>
+              <DT cols={drill.cols} rows={drill.rows} />
+            </div>
+          </div>
+        </div>
+      )}
+      <div
+        className="glass pop"
+        style={{
+          padding: '32px 40px',
+          borderRadius: 32,
+          marginBottom: 32,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: `linear-gradient(135deg, ${T.accent}10 0%, transparent 100%)`,
+          border: `1px solid ${T.accent}20`,
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
+        <div style={{ position: 'absolute', top: -40, right: -40, opacity: 0.05 }}><Home size={200} color={T.accent} /></div>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{
+            fontFamily: T.head,
+            color: T.accent,
+            fontSize: 14,
+            fontWeight: 900,
+            textTransform: 'uppercase',
+            letterSpacing: 2,
+            marginBottom: 8
+          }}>
+            {todayStr}
+          </div>
+          <div 
+            className="hero-txt"
+            style={{
+              fontFamily: T.head,
+              color: T.txt,
+              fontSize: 36,
+              fontWeight: 950,
+              letterSpacing: '-0.04em',
+              lineHeight: 1.1
+            }}>
+            {(() => {
+              const hr = new Date().getHours();
+              let greeting = "Good Afternoon";
+              if (hr >= 5 && hr < 12) greeting = "Good Morning";
+              else if (hr >= 12 && hr < 17) greeting = "Good Afternoon";
+              else if (hr >= 17 && hr < 21) greeting = "Good Evening";
+              else greeting = "Good Night";
+              return `${greeting}, ${adminUser?.name || 'Don'}`;
+            })()}
+          </div>
+          <div style={{ color: T.dim, fontSize: 15, marginTop: 10, fontWeight: 500, maxWidth: 450, lineHeight: 1.5 }}>
+            Overview of your current portfolio performance. You have <b>{pendingApprovals}</b> loans awaiting your approval today.
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 16 }}>
+          <LiveClock />
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {totalTgt > 0 && (
+              <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                <div style={{ color: T.dim, fontSize: 10, fontWeight: 800, textTransform: 'uppercase' }}>Month Target: {tgtPct}%</div>
+                <div style={{ height: 4, width: 120, background: T.border, borderRadius: 2, overflow: 'hidden', marginTop: 4 }}>
+                   <div style={{ height: '100%', width: `${Math.min(100, tgtPct)}%`, background: T.accent }} />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Live Paybill Balance Banner */}
+      <div className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: `${T.accent}05`, padding: '20px 28px', borderRadius: 24, border: `1px solid ${T.accent}20`, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: `${T.accent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.accent }}>
+            <Wallet size={28} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 900, color: T.dim, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>Live M-Pesa Paybill Liquidity</div>
+            <div style={{ fontSize: 32, fontWeight: 950, color: T.txt, fontFamily: T.head, letterSpacing: '-0.02em', lineHeight: 1 }}>{fmt(paybillBalance.utility || 0)}</div>
+            {paybillBalance.lastUpdate && <div style={{ fontSize: 11, color: T.muted, marginTop: 6, fontWeight: 600 }}>Last sync: {new Date(paybillBalance.lastUpdate).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' })}</div>}
+          </div>
+        </div>
+        <Btn v="accent" style={{ background: `linear-gradient(135deg, ${T.accent}, #00a884)`, color: '#000', height: 44, borderRadius: 12, fontWeight: 900, border: 'none', padding: '0 20px' }} loading={paybillBalance.updating} onClick={handleCheckBalance} icon={RefreshCw}>Live Sync</Btn>
+      </div>
+
+      {/* KPI Row 1 */}
+      <div
+        className="kpi-row"
+        style={{ display: "flex", gap: 10, marginBottom: 10, flexWrap: "wrap" }}
+      >
+        <KPI
+          label="Loan Book"
+          icon={TrendingUp}
+          value={fmtM(book)}
+          color={T.accent}
+          delay={1}
+          onClick={() =>
+            setDrill({
+              title: "All Active Loans",
+              cols: [
+                {
+                  k: "id",
+                  l: "ID",
+                  r: (v) => (
+                    <span
+                      style={{ color: T.accent, fontFamily: T.mono, fontSize: 12 }}
+                    >
+                      {v}
+                    </span>
+                  ),
+                },
+                {
+                  k: "customer",
+                  l: "Customer",
+                  r: (v, r) => renderClickName({ name: v, phone: custPhone(r) }),
+                },
+                { k: "amount", l: "Principal", r: (v) => fmt(v) },
+                {
+                  k: "id",
+                  l: "Remaining",
+                  r: (v, r) => (
+                    <span
+                      style={{
+                        color: T.txt,
+                        fontWeight: 700,
+                        fontFamily: T.mono,
+                      }}
+                    >
+                      {fmt(
+                        calculateLoanStatus(r, null, paidMap[r.id] || 0)
+                          .totalAmountDue,
+                      )}
+                    </span>
+                  ),
+                },
+                {
+                  k: "status",
+                  l: "Status",
+                  r: (v, row) => {
+                    const e = calculateLoanStatus(
+                      row,
+                      null,
+                      paidMap[row.id] || 0,
+                    );
+                    return (
+                      <Badge color={SC[e.badgeStatus] || T.muted}>
+                        {e.status}
+                      </Badge>
+                    );
+                  },
+                },
+                {
+                  k: "totalDays",
+                  l: "Days",
+                  r: (v, row) => {
+                    const e = calculateLoanStatus(row, null, paidMap[row.id] || 0);
+                    return (
+                      <span
+                        style={{
+                          color: e.totalDays > 120 ? T.danger : T.txt,
+                          fontWeight: 800,
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        {e.totalDays}d
+                      </span>
+                    );
+                  },
+                },
+              ],
+              rows: activeList,
+            })
+          }
+        />
+        <KPI
+          label="Overdue"
+          icon={AlertTriangle}
+          value={fmtM(ovAmt)}
+          color={T.danger}
+          delay={2}
+          onClick={() =>
+            setDrill({
+              title: "Overdue Loans",
+              cols: [
+                {
+                  k: "id",
+                  l: "ID",
+                  r: (v) => (
+                    <span
+                      style={{ color: T.accent, fontFamily: T.mono, fontSize: 12 }}
+                    >
+                      {v}
+                    </span>
+                  ),
+                },
+                {
+                  k: "customer",
+                  l: "Customer",
+                  r: (v, r) => renderClickName({ name: v, phone: custPhone(r) }),
+                },
+                {
+                  k: "id",
+                  l: "Remaining",
+                  r: (v, r) => (
+                    <span
+                      style={{
+                        color: T.danger,
+                        fontWeight: 700,
+                        fontFamily: T.mono,
+                      }}
+                    >
+                      {fmt(
+                        calculateLoanStatus(r, null, paidMap[r.id] || 0)
+                          .totalAmountDue,
+                      )}
+                    </span>
+                  ),
+                },
+                {
+                  k: "days",
+                  l: "Days",
+                  r: (v, row) => {
+                    const e = calculateLoanStatus(row, null, paidMap[row.id] || 0);
+                    return (
+                      <span
+                        style={{
+                          color: e.totalDays > 120 ? T.danger : T.txt,
+                          fontWeight: 800,
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        {e.totalDays}d
+                      </span>
+                    );
+                  },
+                },
+                {
+                  k: "status",
+                  l: "Status",
+                  r: (v, row) => {
+                    const e = calculateLoanStatus(
+                      row,
+                      null,
+                      paidMap[row.id] || 0,
+                    );
+                    return (
+                      <Badge color={SC[e.badgeStatus] || T.muted}>
+                        {e.status}
+                      </Badge>
+                    );
+                  },
+                },
+              ],
+              rows: ovList,
+            })
+          }
+        />
+        <KPI
+          label="Collected Today"
+          icon={CheckCircle}
+          value={fmtM(todayP)}
+          color={T.ok}
+          delay={3}
+          onClick={() =>
+            setDrill({
+              title: "Today's Payments",
+              cols: [
+                { k: "id", l: "Pay ID" },
+                {
+                  k: "customer",
+                  l: "Customer",
+                  r: (v, r) => renderClickName({ name: v, phone: custPhone(r) }),
+                },
+                {
+                  k: "amount",
+                  l: "Amount",
+                  r: (v) => (
+                    <span
+                      style={{
+                        color: T.ok,
+                        fontFamily: T.mono,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {fmt(v)}
+                    </span>
+                  ),
+                },
+                { k: "mpesa", l: "M-Pesa" },
+                {
+                  k: "date",
+                  l: "Time",
+                  r: (v) => <span style={{fontSize: 11, fontWeight: 600}}>{ts(v)}</span>
+                },
+                {
+                  k: "status",
+                  l: "Status",
+                  r: (v) => <Badge color={SC[v] || T.muted}>{v}</Badge>,
+                },
+              ],
+              rows: payments.filter((p) => localDateStr(p.date) === now()),
+            })
+          }
+        />
+        <KPI
+          label="Collection Rate"
+          icon={BarChart}
+          value={`${collRate}%`}
+          color={T.ok}
+          delay={4}
+          onClick={() =>
+            setDrill({
+              title: "Collection by Officer",
+              cols: [
+                { k: "name", l: "Officer" },
+                { k: "book", l: "Book", r: (v) => fmt(v) },
+                {
+                  k: "collected",
+                  l: "Collected",
+                  r: (v) => (
+                    <span style={{ color: T.ok, fontFamily: T.mono }}>
+                      {fmt(v)}
+                    </span>
+                  ),
+                },
+                {
+                  k: "rate",
+                  l: "Rate",
+                  r: (v) => (
+                    <span
+                      style={{
+                        color: +v > 80 ? T.ok : T.warn,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {v}%
+                    </span>
+                  ),
+                },
+              ],
+              rows: workers
+                .map((w) => {
+                  const wl = loans.filter((l) => l.officer === w.name);
+                  let bk = 0,
+                    wp = 0;
+                  wl.forEach((l) => {
+                    const p = paidMap[l.id] || 0;
+                    const e = calculateLoanStatus(l, null, p);
+                    if (!e.isSettled && !e.isWrittenOff) {
+                      bk += e.totalAmountDue;
+                    }
+                    wp += p;
+                  });
+                  return {
+                    name: w.name,
+                    book: bk,
+                    collected: wp,
+                    rate:
+                      wp > 0 && bk > 0
+                        ? ((wp / (wp + bk)) * 100).toFixed(1)
+                        : "0.0",
+                  };
+                })
+                .filter((x) => x.book > 0),
+            })
+          }
+        />
+        <KPI
+          label="Payment Health"
+          icon={Activity}
+          value={`${paymentHealth}%`}
+          color={paymentHealth > 90 ? T.ok : paymentHealth > 70 ? T.warn : T.danger}
+          delay={4.5}
+          onClick={() =>
+            setDrill({
+              title: "M-Pesa Webhook & API Health",
+              color: paymentHealth > 90 ? T.ok : T.warn,
+              cols: [
+                { k: "type", l: "Type" },
+                { k: "phone", l: "Phone" },
+                { k: "amount", l: "Amount", r: (v) => fmt(v) },
+                { k: "status", l: "Status", r: (v) => <Badge color={SC[v] || T.muted}>{v}</Badge>},
+                { k: "desc", l: "Result / Message", r: (v) => <span style={{fontSize:11, opacity:0.7}}>{v}</span> }
+              ],
+              rows: [
+                ...stkRequests.map(r => ({ type: 'STK Push', phone: r.phone_number, amount: r.amount, status: r.status, desc: r.result_desc || 'Waiting for callback...' })),
+                ...b2cDisbursements.map(r => ({ type: 'B2C Payout', phone: r.phone_number, amount: r.amount, status: r.status, desc: r.result_desc || 'Waiting for result...' }))
+              ].sort((a,b) => (a.status === 'Pending' ? -1 : 1))
+            })
+          }
+        />
+      </div>
+
+      {/* KPI Row 2 */}
+      <div
+        className="kpi-row"
+        style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}
+      >
+        <KPI
+          label="Active Workers"
+          icon={HardHat}
+          value={workers.filter((w) => w.status === "Active").length}
+          delay={1}
+          onClick={() =>
+            setDrill({
+              title: "Active Staff",
+              cols: [
+                { k: "name", l: "Name" },
+                { k: "role", l: "Role" },
+                { k: "phone", l: "Phone" },
+              ],
+              rows: workers.filter((w) => w.status === "Active"),
+            })
+          }
+        />
+        <KPI
+          label="Customers"
+          icon={User}
+          value={customers.length}
+          delay={2}
+          onClick={() =>
+            setDrill({
+              title: "All Customers",
+              cols: [
+                {
+                  k: "id",
+                  l: "ID",
+                  r: (v) => (
+                    <span
+                      style={{ color: T.accent, fontFamily: T.mono, fontSize: 12 }}
+                    >
+                      {v}
+                    </span>
+                  ),
+                },
+                {
+                  k: "name",
+                  l: "Name",
+                  r: (v, r) => renderClickName({ name: v, phone: r.phone }),
+                },
+                { k: "business", l: "Business" },
+                { k: "location", l: "Location" },
+                { k: "risk", l: "Risk", r: (v) => <Badge color={RC[v]}>{v}</Badge> },
+              ],
+              rows: customers,
+            })
+          }
+        />
+        <KPI
+          label="Active Borrowers"
+          icon={UserPlus}
+          value={activeBorrowersCount}
+          color={T.accent}
+          delay={2.5}
+          onClick={() =>
+            setDrill({
+              title: "Active Borrowers",
+              cols: [
+                {
+                  k: "id",
+                  l: "ID",
+                  r: (v) => (
+                    <span
+                      style={{ color: T.accent, fontFamily: T.mono, fontSize: 12 }}
+                    >
+                      {v}
+                    </span>
+                  ),
+                },
+                {
+                  k: "name",
+                  l: "Name",
+                  r: (v, r) => renderClickName({ name: v, phone: r.phone }),
+                },
+                { k: "business", l: "Business" },
+                { k: "location", l: "Location" },
+                { k: "risk", l: "Risk", r: (v) => <Badge color={RC[v]}>{v}</Badge> },
+              ],
+              rows: customers.filter(c => {
+                const cLoans = loans.filter(l => l.customerId === c.id);
+                return cLoans.some(l => {
+                  const e = calculateLoanStatus(l, null, paidMap[l.id] || 0);
+                  return !['Settled', 'Written off', 'Approved', 'Application submitted', 'worker-pending'].includes(e.badgeStatus);
+                });
+              }),
+            })
+          }
+        />
+        <KPI
+          label="Monthly Target"
+          icon={Target}
+          value={totalTgt > 0 ? `${tgtPct}%` : 'Set Target'}
+          color={tgtPct >= 100 ? T.ok : tgtPct >= 50 ? T.warn : T.accent}
+          delay={2.8}
+          sub={totalTgt > 0 ? `${fmt(curDisb)} / ${fmt(totalTgt)}` : 'Click to configure'}
+          onClick={() => {
+            setNewTargetAmt(totalTgt > 0 ? String(totalTgt) : '');
+            setShowTargetModal(true);
+          }}
+        />
+        <KPI
+          label="PAR 7"
+          icon={AlertTriangle}
+          value={`${par(7)}%`}
+          color={+par(7) > 10 ? T.danger : T.warn}
+          delay={3}
+          onClick={() =>
+            setDrill({
+              title: "Loans Overdue 7+ Days",
+              cols: [
+                {
+                  k: "id",
+                  l: "ID",
+                  r: (v) => (
+                    <span
+                      style={{ color: T.accent, fontFamily: T.mono, fontSize: 12 }}
+                    >
+                      {v}
+                    </span>
+                  ),
+                },
+                {
+                  k: "customer",
+                  l: "Customer",
+                  r: (v, r) => renderClickName({ name: v, phone: custPhone(v) }),
+                },
+                {
+                  k: "id",
+                  l: "Remaining",
+                  r: (v, r) =>
+                    fmt(
+                      calculateLoanStatus(r, null, paidMap[r.id] || 0)
+                        .totalAmountDue,
+                    ),
+                },
+                {
+                  k: "days",
+                  l: "Days",
+                  r: (v, row) => {
+                    const e = calculateLoanStatus(row, null, paidMap[row.id] || 0);
+                    return (
+                      <span style={{ color: T.danger, fontWeight: 800 }}>
+                        {e.overdueDays}d
+                      </span>
+                    );
+                  },
+                },
+              ],
+              rows: loans.filter((l) => {
+                const e = calculateLoanStatus(l, null, paidMap[l.id] || 0);
+                return e.overdueDays >= 7 && !e.isSettled && !e.isWrittenOff;
+              }),
+            })
+          }
+        />
+        <KPI
+          label="PAR 30"
+          icon={AlertTriangle}
+          value={`${par(30)}%`}
+          color={+par(30) > 5 ? T.danger : T.ok}
+          delay={4}
+          onClick={() =>
+            setDrill({
+              title: "Loans Overdue 30+ Days",
+              cols: [
+                {
+                  k: "id",
+                  l: "ID",
+                  r: (v) => (
+                    <span
+                      style={{ color: T.accent, fontFamily: T.mono, fontSize: 12 }}
+                    >
+                      {v}
+                    </span>
+                  ),
+                },
+                {
+                  k: "customer",
+                  l: "Customer",
+                  r: (v, r) => renderClickName({ name: v, phone: custPhone(v) }),
+                },
+                {
+                  k: "id",
+                  l: "Remaining",
+                  r: (v, r) =>
+                    fmt(
+                      calculateLoanStatus(r, null, paidMap[r.id] || 0)
+                        .totalAmountDue,
+                    ),
+                },
+                {
+                  k: "days",
+                  l: "Days",
+                  r: (v, row) => {
+                    const e = calculateLoanStatus(row, null, paidMap[row.id] || 0);
+                    return (
+                      <span
+                        style={{
+                          color: T.danger,
+                          fontWeight: 800,
+                          fontFamily: T.mono,
+                        }}
+                      >
+                        {e.overdueDays}d
+                      </span>
+                    );
+                  },
+                },
+                {
+                  k: "status",
+                  l: "Phase",
+                  r: (_, r) => {
+                    const e = calculateLoanStatus(r, null, paidMap[r.id] || 0);
+                    return (
+                      <span
+                        style={{
+                          color: e.isFrozen ? T.purple : T.danger,
+                          fontSize: 11,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {e.phase === "frozen"
+                          ? "❄ Frozen"
+                          : e.phase === "penalty"
+                            ? "⚠ Penalty"
+                            : "Interest"}
+                      </span>
+                    );
+                  },
+                },
+              ],
+              rows: loans.filter((l) => {
+                const e = calculateLoanStatus(l, null, paidMap[l.id] || 0);
+                return e.overdueDays >= 30 && !e.isSettled && !e.isWrittenOff;
+              }),
+            })
+          }
+        />
+      </div>
+
+      {/* Live Chart */}
+      <LivePortfolioChart loans={loans} payments={payments} customers={customers} onNav={onNav} setDrill={setDrill} openContact={openContact} custPhone={custPhone} scrollTop={scrollTop}/>
+
+      {/* 7-Day Collections Bar Chart */}
+      <WeeklyCollectionsChart payments={payments}/>
+
+      <div className="mob-grid1" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+        <Card>
+          <CH title="Portfolio at Risk"/>
+          <div style={{padding:"16px 18px"}}>
+            {[["PAR 1 (≥1d)",par(1),+par(1)>15?T.danger:T.warn],["PAR 7 (≥7d)",par(7),+par(7)>10?T.danger:T.warn],["PAR 30 (≥30d)",par(30),+par(30)>5?T.danger:T.ok]].map(([l,v,c])=>(
+              <div key={l} style={{marginBottom:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                  <span style={{color:T.dim,fontSize:13}}>{l}</span>
+                  <span style={{color:c,fontWeight:800,fontFamily:T.mono}}>{v}%</span>
+                </div>
+                <Bar value={+v} max={30} color={c}/>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <CH title="Default Rate by Location"/>
+          <div style={{maxHeight:'40vh',overflowY:'auto',overflowX:'hidden',padding:"12px 18px"}}>
+            {locs.length===0&&<div style={{color:T.muted,fontSize:12,textAlign:'center',padding:'12px 0'}}>No location data</div>}
+            {locs.map(({loc,rate,n})=>(
+              <div key={loc} style={{display:"flex",alignItems:"center",gap:8,marginBottom:11}}>
+                <div style={{width:80,color:T.txt,fontSize:12,flexShrink:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={loc}>{loc}</div>
+                <div style={{flex:1}}><Bar value={rate} max={30} color={rate>15?T.danger:rate>8?T.warn:T.ok}/></div>
+                <div style={{color:rate>15?T.danger:rate>8?T.warn:T.ok,fontWeight:800,fontSize:12,width:36,textAlign:"right",fontFamily:T.mono,flexShrink:0}}>{rate}%</div>
+                <div style={{color:T.muted,fontSize:10,width:28,textAlign:"right",flexShrink:0}}>{n}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Overdue Loans card removed from dashboard — see Collections page */}
+      <RepayTracker 
+        loans={loans} 
+        payments={payments} 
+        customers={customers}
+        onSelectCustomer={(l) => onOpenCustomerProfile(l.customerId || l.customer_id, 'payments')}
+      />
+      {selLoan&&<LoanModal loan={selLoan} customers={customers} payments={payments} interactions={interactions||[]} onClose={()=>setSelLoan(null)} onViewCustomer={cust=>{setSelLoan(null);setSelCust(cust);}}/>}
+
+      {showTargetModal && (
+        <Dialog title={`Set Monthly Disbursement Target — ${currentMonthKey}`} onClose={() => setShowTargetModal(false)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {totalTgt > 0 && (
+              <div style={{ padding: '12px 16px', background: T.surface, borderRadius: 12, border: `1px solid ${T.border}` }}>
+                <div style={{ fontSize: 11, color: T.dim, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>Current Target</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: T.txt, marginTop: 4 }}>{fmt(totalTgt)}</div>
+                <div style={{ fontSize: 12, color: tgtPct >= 100 ? T.ok : T.warn, marginTop: 4, fontWeight: 700 }}>
+                  {fmt(curDisb)} disbursed ({tgtPct}% achieved)
+                </div>
+              </div>
+            )}
+            <NumericInput
+              label="New Disbursement Target (KES)"
+              value={newTargetAmt}
+              onChange={setNewTargetAmt}
+              placeholder="e.g. 5000000"
+            />
+            <Alert type="info">
+              This sets the total loan disbursement goal for <strong>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</strong>. 
+              Progress is tracked against active loans disbursed this month.
+            </Alert>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <Btn variant="ghost" onClick={() => setShowTargetModal(false)}>Cancel</Btn>
+              <Btn
+                onClick={handleSaveTarget}
+                disabled={savingTarget || !newTargetAmt || parseFloat(newTargetAmt) <= 0}
+              >
+                {savingTarget ? 'Saving...' : totalTgt > 0 ? 'Update Target' : 'Set Target'}
+              </Btn>
+            </div>
+          </div>
+        </Dialog>
+      )}
+    </div>
+  );
+};
+
+export default DashboardTab;

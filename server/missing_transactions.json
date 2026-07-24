@@ -1,0 +1,58 @@
+[
+  {
+    "receipt": "UEPHS5I65U",
+    "time": "25-05-2026 22:21:01",
+    "details": "Pay Bill from 076****414 - EMMACULATE ACHIENG Acc. 34563289",
+    "status": "Completed",
+    "paidIn": "1000.00",
+    "account": "34563289"
+  },
+  {
+    "receipt": "UEPLE5OZL5",
+    "time": "25-05-2026 22:16:09",
+    "details": "Pay Bill from 25479****166 - Margaret **** Kahihia Acc. 12474511",
+    "status": "Completed",
+    "paidIn": "3000.00",
+    "account": "12474511"
+  },
+  {
+    "receipt": "UEPMB576GU",
+    "time": "25-05-2026 18:15:15",
+    "details": "Pay Bill from 25471****816 - DONALD **** OSIEMO Acc. 29590263",
+    "status": "Completed",
+    "paidIn": "100.00",
+    "account": "29590263"
+  },
+  {
+    "receipt": "UEPMB570JV",
+    "time": "25-05-2026 17:51:48",
+    "details": "Pay Bill from 25471****816 - DONALD **** OSIEMO Acc. 29590263",
+    "status": "Completed",
+    "paidIn": "100.00",
+    "account": "29590263"
+  },
+  {
+    "receipt": "UEPMB56WAS",
+    "time": "25-05-2026 17:41:55",
+    "details": "Pay Bill from 25471****816 - DONALD **** OSIEMO Acc. 29590263",
+    "status": "Completed",
+    "paidIn": "220.00",
+    "account": "29590263"
+  },
+  {
+    "receipt": "UEPMB552N4",
+    "time": "25-05-2026 08:38:52",
+    "details": "Pay Bill from 25471****816 - DONALD **** OSIEMO Acc. 29590263",
+    "status": "Completed",
+    "paidIn": "10.00",
+    "account": "29590263"
+  },
+  {
+    "receipt": "UEP8Y56XU9",
+    "time": "25-05-2026 08:22:15",
+    "details": "Pay Bill Online from 25472****470 - donald **** osiemo Acc. 29590263",
+    "status": "Completed",
+    "paidIn": "10000.00",
+    "account": "29590263"
+  }
+]

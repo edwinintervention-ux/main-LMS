@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="description" content="Adequate Capital Ltd — Microfinance LMS" />
+    <title>Adequate Capital LMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <style>
+      /* Instant splash — visible before any JS loads */
+      #boot-splash {
+        position: fixed; inset: 0;
+        background: #060A10;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 20px; z-index: 99999;
+        font-family: Inter, system-ui, sans-serif;
+        transition: opacity 0.3s ease;
+      }
+      #boot-splash.hidden { opacity: 0; pointer-events: none; }
+      #boot-logo {
+        font-size: 22px; font-weight: 900;
+        letter-spacing: -0.5px; color: #00D4AA;
+      }
+      #boot-spinner {
+        width: 32px; height: 32px;
+        border: 3px solid #1A2234;
+        border-top-color: #00D4AA;
+        border-radius: 50%;
+        animation: boot-spin 0.8s linear infinite;
+      }
+      #boot-label {
+        color: #64748B; font-size: 13px; font-weight: 500;
+      }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Inline splash: shows instantly, zero JS required -->
+      <div id="boot-splash">
+        <div id="boot-logo">Adequate Capital</div>
+        <div id="boot-spinner"></div>
+        <div id="boot-label">Starting up…</div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Remove the splash once React has mounted
+      // React replaces #root contents, so we just fade out
+      document.addEventListener('DOMContentLoaded', function() {
+        var splash = document.getElementById('boot-splash');
+        if (splash) {
+          // React will unmount this naturally; but hide it after 8s as a safety net
+          setTimeout(function() {
+            if (splash && splash.parentNode) splash.classList.add('hidden');
+          }, 8000);
+        }
+      });
+    </script>
+  </body>
+</html>
