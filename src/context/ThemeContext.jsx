@@ -10,7 +10,7 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('acl_theme') || 'light';
+    return localStorage.getItem('acl_theme') || 'dark';
   });
 
   useEffect(() => {
@@ -19,10 +19,10 @@ export const ThemeProvider = ({ children }) => {
     const applyTheme = (currentTheme) => {
       root.setAttribute('data-theme', currentTheme);
       
-      if (currentTheme === 'dark' || currentTheme === 'dim' || currentTheme === 'green') {
+      if (currentTheme === 'dark' || currentTheme === 'dim' || currentTheme === 'green' || currentTheme === 'orange') {
         root.classList.add('dark'); // keep generic 'dark' class for some utilities
         root.style.colorScheme = 'dark';
-      } else {
+      } else if (currentTheme === 'light') {
         root.classList.remove('dark');
         root.style.colorScheme = 'light';
       }

@@ -489,7 +489,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
         width: sideCollapsed && !isMobile ? 80 : 280,
         zIndex: 5100,
         height: isMobile ? '100dvh' : '100vh',
-        background: theme === 'light' ? 'rgba(255, 255, 255, 0.95)' : 'rgba(13, 20, 33, 0.92)',
+        background: theme === 'light' ? 'rgba(255, 255, 255, 0.95)' : T.bg,
         backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
         transform: isMobile ? `translateX(${sb ? '0%' : '-100%'})` : 'none',
         transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), width 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
