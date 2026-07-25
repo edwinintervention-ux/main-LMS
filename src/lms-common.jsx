@@ -267,7 +267,7 @@ export const Styles = () => (
       --glass-blur: 16px;
     }
 
-    [data-theme='dim'] {
+    :root[data-theme='dim'] {
       --bg: #0F172A;
       --surface: #1E293B;
       --card: #1e293b;
@@ -297,7 +297,7 @@ export const Styles = () => (
       --glass-blur: 16px;
     }
 
-    [data-theme='dark'] {
+    :root[data-theme='dark'] {
       --bg: #000000;
       --surface: #0A0A0A;
       --card: #111111;
@@ -327,7 +327,7 @@ export const Styles = () => (
       --glass-blur: 20px;
     }
 
-    [data-theme='orange'] {
+    :root[data-theme='orange'] {
       --bg: #FFF7ED;
       --surface: #FFFFFF;
       --card: #FFFFFF;
@@ -447,7 +447,7 @@ export const Styles = () => (
       background: rgba(255, 255, 255, 0.25) !important;
     }
 
-    [data-theme='green'] {
+    :root[data-theme='green'] {
       --bg: #061e14;
       --surface: #0a2e1f;
       --card: #10402b;
