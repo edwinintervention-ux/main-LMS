@@ -166,7 +166,7 @@ export const CommandCenter = ({ customers, onClose, onSelect }) => {
         
         <div style={{ padding: '12px 24px', background: theme === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)', borderTop: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`, color: T.dim, fontSize: 11, display: 'flex', justifyContent: 'space-between' }}>
           <div>Search across clients, IDs, and emergency contacts</div>
-          <div style={{ fontWeight: 700 }}>Adequate Capital LMS</div>
+          <div style={{ fontWeight: 700 }}>Intervention Capital LMS</div>
         </div>
       </div>
     </div>

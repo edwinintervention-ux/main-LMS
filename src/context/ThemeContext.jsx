@@ -10,7 +10,7 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('acl_theme') || 'system';
+    return localStorage.getItem('acl_theme') || 'light';
   });
 
   useEffect(() => {

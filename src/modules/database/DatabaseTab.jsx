@@ -479,7 +479,7 @@ const DatabaseTab = ({allState,setLoans,setCustomers,setPayments,setWorkers,setL
       setTimeout(()=>{
         try{
           const text=ev.target.result;
-          if(!text.includes('ADEQUATE CAPITAL LMS BACKUP')){
+          if(!text.includes('INTERVENTION CAPITAL LMS BACKUP') && !text.includes('INTERVENTION CAPITAL LMS BACKUP')){
             setUploadProgress(0);
             setRestoreStatus('error:⚠️ Invalid backup file.');return;
           }

@@ -293,7 +293,7 @@ const SecuritySettingsTab = ({ adminUser, setAdminUser, auditLog, addAudit, show
                         if (v !== clean) showToast('⚠ Spaces removed automatically', 'warn');
                         saveCfg({ mpesaInitiator: clean });
                       }} 
-                      placeholder="e.g. ADEQUATE_ADMIN"
+                      placeholder="e.g. INTERVENTION_ADMIN"
                       hint="Must match Safaricom portal exactly (No spaces)."
                     />
 

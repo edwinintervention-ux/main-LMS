@@ -48,7 +48,7 @@ export default function Sidebar({ active, onNavigate, onClose }) {
       {/* Logo */}
       <div style={{ padding: '20px 16px 14px', borderBottom: `1px solid ${T.border}` }}>
         <div style={{ color: T.accent, fontWeight: 900, fontSize: 15, letterSpacing: -0.3 }}>
-          Adequate Capital
+          Intervention Capital
         </div>
         <div style={{ color: T.muted, fontSize: 10, marginTop: 2 }}>Microfinance LMS</div>
       </div>

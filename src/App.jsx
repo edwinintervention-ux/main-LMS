@@ -34,7 +34,21 @@ function AppLoader() {
 }
 
 export default function App() {
-  const { loading } = useAuth();
+  const { loading, error } = useAuth();
+  if (error && error.includes("Supabase configuration is missing")) {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100vh', background: '#0D1B2A', flexDirection: 'column', gap: 16,
+        padding: 24, textAlign: 'center', color: '#EF4444', fontFamily: 'system-ui'
+      }}>
+        <h2 style={{ margin: 0, color: '#00D4AA', fontSize: '24px', fontWeight: '800' }}>Configuration Required</h2>
+        <p style={{ color: '#94A3B8', maxWidth: 500, margin: 0, lineHeight: 1.6, fontSize: '15px' }}>
+          Your Supabase configuration is missing in the hosting environment. Please add <strong>VITE_SUPABASE_URL</strong> and <strong>VITE_SUPABASE_ANON_KEY</strong> to your Cloudflare Pages environment variables, then trigger a new deployment.
+        </p>
+      </div>
+    );
+  }
   if (loading) return <AppLoader />;
   return <LMSApp />;
 }

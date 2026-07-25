@@ -1,4 +1,4 @@
-import { supabase } from '../../config/supabaseClient.js';
+import { supabase } from '../../config/db.js';
 import * as Mpesa from './mpesa.client.js';
 
 /**

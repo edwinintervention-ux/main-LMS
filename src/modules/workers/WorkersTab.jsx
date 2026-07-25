@@ -504,7 +504,7 @@ const WorkersTab = ({adminUser,workers,setWorkers,loans,setLoans,payments,custom
                       { k: 'mpesa_receipt', l: 'M-Pesa Receipt', r: v => <span style={{ fontFamily: T.mono, fontSize: 11, color: T.accent }}>{v}</span> },
                       { k: 'created_at', l: 'Time', r: v => ts(v) },
                       { k: 'id', l: 'Receipt', r: (v, row) => <Btn sm v="secondary" icon={Download} onClick={() => {
-                        const content = `TRANSACTION RECEIPT\n\nRecipient: ${w.name}\nPeriod: ${row.month}\nAmount: KES ${row.amount}\nReceipt: ${row.mpesa_receipt}\nPhone: ${row.recipient_phone}\nDate: ${ts(row.created_at)}\n\nThank you for your service.\nAdequate Capital LTD`;
+                        const content = `TRANSACTION RECEIPT\n\nRecipient: ${w.name}\nPeriod: ${row.month}\nAmount: KES ${row.amount}\nReceipt: ${row.mpesa_receipt}\nPhone: ${row.recipient_phone}\nDate: ${ts(row.created_at)}\n\nThank you for your service.\nIntervention Capital LTD`;
                         const blob = new Blob([content], { type: 'text/plain' });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a'); a.href = url; a.download = `Receipt_${row.mpesa_receipt}.txt`; a.click(); a.remove();

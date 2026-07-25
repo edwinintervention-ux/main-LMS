@@ -307,7 +307,7 @@ export default function AssetRecoveryDashboard({
 
       {/* ── Repossessed Assets Inventory ────────────────────────────────────── */}
       <Card style={{ marginBottom: 24 }}>
-        <CH title="Repossessed Assets Inventory" sub="Physical collateral currently under Adequate Capital's legal control" />
+        <CH title="Repossessed Assets Inventory" sub="Physical collateral currently under Intervention Capital's legal control" />
         <DT 
           cols={[
             { k: 'assetName', l: 'Asset Description', r: (v, row) => <div style={{ fontWeight: 700 }}>{v} <span style={{ fontSize: 10, color: T.muted, fontWeight: 400 }}>• {row.loanId}</span></div> },

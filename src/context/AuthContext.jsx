@@ -39,7 +39,7 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    if (!data && userEmail !== 'admin@adequatecapital.co.ke') {
+    if (!data && userEmail !== 'admin@interventioncapital.co.ke' && userEmail !== 'admin@interventioncapital.co.ke') {
       console.warn('[AuthContext] No worker profile found for:', userEmail);
     } else if (data) {
       // ── Security: Force-sign-out deactivated / suspended accounts ──────────
@@ -56,13 +56,11 @@ export function AuthProvider({ children }) {
 
   // ── Initialise ──────────────────────────────────────────────
   useEffect(() => {
-    /*
-    if (DEMO_MODE) {
-      // No Supabase — start in demo mode, not logged in
+    if (!supabase) {
+      setError("Supabase configuration is missing. Make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in the environment.");
       setLoading(false);
       return;
     }
-    */
 
     // Parallelise session resolution and worker profile loading
     supabase.auth.getSession().then(({ data: { session } }) => {

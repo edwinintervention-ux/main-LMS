@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { calculateStatutoryDeductions } from '@/utils/taxCalculator';
 import { Landmark, Download, RefreshCw, Send, CheckCircle, Clock, TrendingUp, Users, DollarSign, Wallet, FileText, ArrowRight, Printer, AlertCircle, Zap, ShieldCheck, Activity } from 'lucide-react';
-import { T, DT, Btn, Badge, fmt, ts, now, KPI, Card, CH, fmtM, Dialog, FI, generatePayslipHTML, dlBlob, ADEQUATE_LOGO_BASE64, ADEQUATE_STAMP_BASE64, calculateLoanStatus } from '@/lms-common';
+import { T, DT, Btn, Badge, fmt, ts, now, KPI, Card, CH, fmtM, Dialog, FI, generatePayslipHTML, dlBlob, INTERVENTION_LOGO_BASE64, INTERVENTION_STAMP_BASE64, calculateLoanStatus } from '@/lms-common';
 
 const SalariesTab = ({ workers = [], salaryPayments = [], setSalaryPayments, customers = [], loans = [], leads = [], addAudit, showToast, onNav, workerDeductions = [], setWorkerDeductions, workerAdditions = [], setWorkerAdditions, payments = [], theme }) => {
   const [view, setView] = useState('payroll'); // Default to Analysis for better UX
@@ -544,15 +544,15 @@ const SalariesTab = ({ workers = [], salaryPayments = [], setSalaryPayments, cus
           
           <div class="header">
             <div class="company-details">
-              <div class="company-name">ADEQUATE CAPITAL LTD</div>
+              <div class="company-name">INTERVENTION CAPITAL LTD</div>
               <div class="slogan">You deserve nothing less</div>
               <div class="company-contact">
                 P.O. Box 253-00241, Kitengela<br/>
-                info@adequatecapital.co.ke
+                info@interventioncapital.co.ke
               </div>
             </div>
             <div class="logo-area">
-              <img src="${ADEQUATE_LOGO_BASE64}" alt="Logo" style="height: 60px; width: auto; display: block; margin-left: auto;" />
+              <img src="${INTERVENTION_LOGO_BASE64}" alt="Logo" style="height: 60px; width: 108px; display: block; margin-left: auto;" />
             </div>
           </div>
           
@@ -665,7 +665,7 @@ const SalariesTab = ({ workers = [], salaryPayments = [], setSalaryPayments, cus
             <div class="net-val">${fmtKey(payment.amount || payment.netDue)}</div>
             
             <div class="stamp-container">
-              <img src="${ADEQUATE_STAMP_BASE64}" alt="Stamp" style="width: 100%; height: auto; display: block;" />
+              <img src="${INTERVENTION_STAMP_BASE64}" alt="Stamp" style="width: 100%; height: auto; display: block;" />
               <div class="stamp-date">${today.split('T')[0].toUpperCase()}</div>
             </div>
           </div>

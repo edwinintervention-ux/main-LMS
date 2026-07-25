@@ -379,7 +379,7 @@ export default function SettingsTab({
                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: -10 }}>
                    <Section title="Visual Appearance" sub="Customize the look and feel of your administrative portal." />
                    <Btn v="ghost" sm onClick={() => {
-                     saveCfg({ primaryColor: '#00D4AA', portalName: 'Adequate Capital' });
+                     saveCfg({ primaryColor: '#00D4AA', portalName: 'Intervention Capital' });
                      showToast('Restored brand defaults', 'info');
                    }} style={{ marginTop: 8, fontSize: 11, fontWeight: 800 }}>Reset to Defaults</Btn>
                  </div>
@@ -441,7 +441,7 @@ export default function SettingsTab({
                                 </div>
                              </div>
                           </div>
-                         <FI label="Portal Display Name" value={cfg.portalName || 'Adequate Capital'} onChange={v => saveCfg({ portalName: v })} placeholder="e.g. Usherverse Admin" />
+                         <FI label="Portal Display Name" value={cfg.portalName || 'Intervention Capital'} onChange={v => saveCfg({ portalName: v })} placeholder="e.g. Usherverse Admin" />
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 32 }}>
                          <FI label="Footer Copyright Notice" value={cfg.copyrightText || '© 2026 Usherverse Finance'} onChange={v => saveCfg({ copyrightText: v })} />
@@ -817,7 +817,7 @@ export default function SettingsTab({
                       setPwErr('');
                       const { supabase } = await import('@/config/supabaseClient');
                       let emailToReset = worker?.email || sessionStorage.getItem('acl_rec_email');
-                      if (!emailToReset || emailToReset === 'admin@adequatecapital.co.ke') {
+                      if (!emailToReset || emailToReset === 'admin@interventioncapital.co.ke' || emailToReset === 'admin@interventioncapital.co.ke') {
                          try {
                             const { supabase } = await import('@/config/supabaseClient');
                             const { data: adminWorker } = await supabase.from('workers').select('email').eq('role', 'Super Admin').limit(1).maybeSingle();

@@ -1,4 +1,25 @@
-// ADEQUATE CAPITAL LMS — App Shell (Modularized)
+// INTERVENTION CAPITAL LMS — App Shell (Modularized)
+
+// ─── Brand Logo ─────────────────────────────────────────────────────────────
+const InterventionLogo = ({ size = 'md', dark = false }) => {
+  const isSmall = size === 'sm';
+  const isLarge = size === 'lg';
+  const h = isLarge ? 160 : isSmall ? 32 : 130;
+
+  return (
+    <img
+      src={INTERVENTION_LOGO_BASE64}
+      alt="Intervention Capital"
+      style={{
+        height: h,
+        width: h * 1.8,
+        display: 'block',
+        filter: dark ? 'invert(1) hue-rotate(180deg) brightness(1.1)' : 'none',
+        transition: 'filter 0.3s ease'
+      }}
+    />
+  );
+};
 import { Lock, ShieldAlert, Mail, Smartphone, Check, Search as SearchIcon, ChevronRight, Menu, ChevronLeft, LogOut, Home, Calculator, Fingerprint, Zap, ShieldCheck, Moon, Sun, Flame, Leaf, Eclipse } from 'lucide-react';
 import LoansTab from "@/modules/loans/LoansTab";
 import PaymentsTab from "@/modules/payments/PaymentsTab";
@@ -25,6 +46,7 @@ import MultiCalculator from "@/modules/tools/MultiCalculator";
 import { CommandCenter } from "@/components/CommandCenter";
 
 import {
+  INTERVENTION_LOGO_BASE64,
   T,
   SC,
   RC,
@@ -368,8 +390,8 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
           style={{
             display: 'flex', alignItems: 'center', justifyContent: sideCollapsed && !isMobile ? 'center' : 'flex-start', 
             gap: sideCollapsed && !isMobile ? 0 : 12, width: 'calc(100% - 16px)', margin: '0 8px', padding: '12px', borderRadius: 14, border: 'none',
-            background: isActive ? `linear-gradient(135deg, ${item.c}20, transparent)` : 'none',
-            color: isActive ? T.txt : T.muted,
+            background: isActive ? (theme === 'light' ? '#0D1B2A' : `linear-gradient(135deg, ${item.c}20, transparent)`) : 'none',
+            color: isActive ? (theme === 'light' ? '#ffffff' : T.txt) : T.muted,
             cursor: 'pointer', fontSize: 13.5, fontWeight: isActive ? 800 : 500, marginBottom: 2, textAlign: 'left',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', flexShrink: 0, position: 'relative',
           }}>
@@ -383,17 +405,17 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
           <span style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             width: 32, height: 32, borderRadius: 10,
-            background: isActive ? item.c : `${item.c}10`,
-            color: isActive ? '#000' : item.c,
+            background: isActive ? (theme === 'light' ? `${item.c}20` : item.c) : `${item.c}10`,
+            color: isActive ? (theme === 'light' ? item.c : '#000') : item.c,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: isActive ? `0 8px 20px -5px ${item.c}60` : 'none',
+            boxShadow: isActive && theme !== 'light' ? `0 8px 20px -5px ${item.c}60` : 'none',
             border: `1.5px solid ${isActive ? 'transparent' : `${item.c}20`}`
           }}>
             <item.i size={16} strokeWidth={isActive ? 2.5 : 2} />
           </span>
           {(!sideCollapsed || isMobile) && (
             <>
-              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: isActive ? T.txt : T.dim, fontWeight: isActive ? 800 : 600, fontSize: 14, letterSpacing: '-0.01em' }}>{item.l}</span>
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: isActive ? (theme === 'light' ? '#ffffff' : T.txt) : T.dim, fontWeight: isActive ? 800 : 600, fontSize: 14, letterSpacing: '-0.01em' }}>{item.l}</span>
               <div style={{ display: 'flex', gap: 4 }}>
                 {item.id === 'payments' && unalloc > 0 && <span style={{ background: T.danger, color: '#fff', borderRadius: 6, padding: '2px 6px', fontSize: 9, fontWeight: 900 }}>{unalloc}</span>}
                 {item.id === 'collections' && overdue > 0 && <span style={{ background: T.danger, color: '#fff', borderRadius: 6, padding: '2px 6px', fontSize: 9, fontWeight: 900 }}>{overdue}</span>}
@@ -404,7 +426,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
         </button>
       </React.Fragment>
     );
-  }, [screen, navTo, unalloc, overdue, pendingApprovals]);
+  }, [screen, navTo, unalloc, overdue, pendingApprovals, theme]);
 
   const S = {
     dashboard:  DashboardTab,
@@ -478,15 +500,18 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
         overflow: 'hidden',
         borderRight: `1px solid ${T.border}`
       }}>
-        <div style={{ padding: sideCollapsed && !isMobile ? '15px 0' : '15px 14px 12px', borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: sideCollapsed && !isMobile ? 'center' : 'space-between', minHeight: 64, flexShrink: 0 }}>
+        <div style={{ padding: sideCollapsed && !isMobile ? '12px 0' : (isMobile ? '12px 14px 10px' : '24px 14px 20px'), borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: (sideCollapsed && !isMobile) ? 'center' : (isMobile ? 'space-between' : 'center'), minHeight: 64, flexShrink: 0 }}>
           {(!sideCollapsed || isMobile) ? (
-            <div style={{ fontFamily: T.head, color: T.accent, fontWeight: 900, fontSize: 13, letterSpacing: -.2, lineHeight: 1.2, textTransform: 'uppercase' }}>
-              {(cfg.portalName || 'Adequate Capital').split(' ').map((word, i) => <React.Fragment key={i}>{word}{i === 0 && <br />}</React.Fragment>)}
-            </div>
+            <InterventionLogo size="md" dark={theme !== 'light'} />
           ) : (
-            <div style={{ fontFamily: T.head, color: T.accent, fontWeight: 900, fontSize: 18 }}>
-              {(cfg.portalName || 'AC').split(' ').map(w => w[0]).join('')}
-            </div>
+            /* Collapsed: just the icon bars */
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1"  y="18" width="5" height="9"  rx="1" fill={theme === 'light' ? '#0D1B2A' : '#fff'} />
+              <rect x="8"  y="12" width="5" height="15" rx="1" fill={theme === 'light' ? '#0D1B2A' : '#fff'} />
+              <rect x="15" y="6"  width="5" height="21" rx="1" fill={theme === 'light' ? '#0D1B2A' : '#fff'} />
+              <rect x="22" y="1"  width="5" height="26" rx="1" fill={theme === 'light' ? '#0D1B2A' : '#fff'} />
+              <path d="M 0 20 Q 10 28 18 10 L 21 13 L 24 4 L 15 5 L 18 8 Q 12 20 2 16 Z" fill="#2E7D32" />
+            </svg>
           )}
           {isMobile && (
             <button onClick={() => setSb(false)} aria-label="Close navigation menu" style={{ background: T.card2, border: `1px solid ${T.border}`, color: T.dim, borderRadius: 8, width: 30, height: 30, cursor: 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✕</button>
@@ -752,11 +777,11 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
             opacity: 0.8
           }}>
             <div>
-              © {new Date().getFullYear()} Adequate Capital Ltd. All rights reserved.
+              © {new Date().getFullYear()} Intervention Capital Ltd. All rights reserved.
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>📞 0727625470</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>✉️ info@adequatecapital.co.ke</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>✉️ info@interventioncapital.co.ke</span>
             </div>
           </footer>
         </div>
@@ -1127,8 +1152,8 @@ const WorkerPortal = ({workers,setWorkers,loans,setLoans,customers,setCustomers,
       <div style={{minHeight:'100vh',background:T.bg,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:T.body,padding:16}}>
         <div style={{background:T.card,border:`1px solid ${T.hi}`,borderRadius:20,padding:'40px 34px',width:'100%',maxWidth:380,boxShadow:'0 50px 90px #00000070'}}>
           <div style={{textAlign:'center',marginBottom:26}}>
-            <div style={{fontFamily:T.head,color:T.accent,fontSize:22,fontWeight:900}}>{cfg.portalName || 'Adequate Capital'}</div>
-            <div style={{color:T.muted,fontSize:12,marginTop:4}}>{cfg.portalName ? 'Worker Portal' : 'Adequate Capital Ltd'}</div>
+            <div style={{fontFamily:T.head,color:T.accent,fontSize:22,fontWeight:900}}>{cfg.portalName || 'Intervention Capital'}</div>
+            <div style={{color:T.muted,fontSize:12,marginTop:4}}>{cfg.portalName ? 'Worker Portal' : 'Intervention Capital Ltd'}</div>
           </div>
           {err&&<Alert type='danger'>{err}</Alert>}
           <FI label='Email or Username' type='text' value={email} onChange={setEmail} placeholder=''/>
@@ -1146,7 +1171,7 @@ const WorkerPortal = ({workers,setWorkers,loans,setLoans,customers,setCustomers,
 
   if (!dataLoaded) return (
     <div style={{minHeight:'100vh',background:T.bg,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:20}}>
-      <div style={{fontFamily:T.head,color:T.accent,fontWeight:900,fontSize:22,letterSpacing:-.5}}>Adequate Capital</div>
+      <div style={{fontFamily:T.head,color:T.accent,fontWeight:900,fontSize:22,letterSpacing:-.5}}>Intervention Capital</div>
       <div style={{width:32,height:32,border:'3px solid ' + T.border,borderTop:`3px solid ${T.accent}`,borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
       <div style={{color:T.dim,fontSize:13,fontFamily:T.body,fontWeight:500}}>Hydro-syncing workspace…</div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -1204,7 +1229,7 @@ const WorkerPortal = ({workers,setWorkers,loans,setLoans,customers,setCustomers,
   return (
     <div style={{minHeight:'100vh',background:T.bg}}>
       <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:'10px 18px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div style={{fontFamily:T.head,color:T.accent,fontWeight:900,fontSize:14}}>{cfg.portalName || 'Adequate Capital'} — Worker Portal</div>
+        <div style={{fontFamily:T.head,color:T.accent,fontWeight:900,fontSize:14}}>{cfg.portalName || 'Intervention Capital'} — Worker Portal</div>
         <div style={{display:'flex',gap:9,alignItems:'center'}}>
           <button onClick={toggleTheme} aria-label="Toggle Theme" style={{background:T.card2,border:`1px solid ${T.border}`,color:T.muted,borderRadius:8,padding:'4px 10px',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',gap:6,marginRight:4}}>
             {theme === 'dark' ? <Moon size={14} strokeWidth={2} /> : theme === 'dim' ? <Eclipse size={14} strokeWidth={2} /> : theme === 'orange' ? <Flame size={14} strokeWidth={2} /> : theme === 'green' ? <Leaf size={14} strokeWidth={2} /> : <Sun size={14} strokeWidth={2} />}
@@ -1765,13 +1790,11 @@ const AdminLogin = ({onLogin,onWorkerPortal, session, worker, cfg, workers, show
 
       <div className="login-card pop">
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-             <div style={{ width: 64, height: 64, borderRadius: 20, background: `linear-gradient(135deg, ${T.accent}, #00BFA5)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 20px 40px ${T.accent}30` }}>
-                <Lock size={32} color="#000" strokeWidth={2.5} />
-             </div>
+          {/* Full Intervention Capital logo on login */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+            <InterventionLogo size="lg" dark={true} />
           </div>
-          <div style={{ fontFamily: T.head, color: '#fff', fontSize: 32, fontWeight: 900, letterSpacing: '-0.04em' }}>{cfg.portalName || 'Adequate'}</div>
-          <div style={{ color: T.accent, fontSize: 13, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2, marginTop: -2 }}>Secure Portal</div>
+          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 3, marginTop: 8 }}>Secure Portal</div>
         </div>
 
         {/* ── LOCKOUT STATE ─────────────────────── */}
@@ -2535,7 +2558,7 @@ export default function App() {
     <>
       <StylesMemo/>
       <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 20 }}>
-        <div style={{ fontFamily: T.head, color: T.accent, fontWeight: 900, fontSize: 22, letterSpacing: -.5 }}>Adequate Capital</div>
+        <div style={{ fontFamily: T.head, color: T.accent, fontWeight: 900, fontSize: 22, letterSpacing: -.5 }}>Intervention Capital</div>
         <div style={{ width: 32, height: 32, border: '3px solid ' + T.border, borderTop: `3px solid ${T.accent}`, borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -2548,7 +2571,7 @@ export default function App() {
       {mode==='admin-login'&&<AdminLogin onLogin={handleLogin} onWorkerPortal={()=>setMode('worker')} session={session} worker={worker} cfg={cfg} workers={workers} showToast={showToast} />}
       {mode==='admin' && (!dataLoaded ? (
         <div style={{minHeight:'100vh',background:T.bg,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:20}}>
-          <div style={{fontFamily:T.head,color:T.accent,fontWeight:900,fontSize:22,letterSpacing:-.5}}>Adequate Capital</div>
+          <div style={{fontFamily:T.head,color:T.accent,fontWeight:900,fontSize:22,letterSpacing:-.5}}>Intervention Capital</div>
           <div style={{width:32,height:32,border:'3px solid ' + T.border,borderTop:'3px solid ' + T.accent,borderRadius:'50%',animation:'spin .8s linear infinite'}}/>
           <div style={{color:T.muted,fontSize:13,fontFamily:T.body,fontWeight:500}}>Hydro-syncing workspace…</div>
         </div>

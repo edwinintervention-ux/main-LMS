@@ -11,7 +11,7 @@ import {
   T, SC, RC, SFX, Card, CH, KPI, DT, Btn, Badge, Av, 
   Dialog, Alert, LoanForm, DocViewer, FI, hashPwAsync,
   fmt, fmtM, now, uid, ts, sbWrite, toSupabaseWorker, compressImage, calculateLoanStatus, useReminders, RemindersPanel,
-  ADEQUATE_LOGO_BASE64, ADEQUATE_STAMP_BASE64
+  INTERVENTION_LOGO_BASE64, INTERVENTION_STAMP_BASE64
 } from '@/lms-common';
 import ALeads from '@/modules/leads/LeadsTab';
 import AssetRecoveryDashboard from './AssetRecoveryDashboard';
@@ -559,15 +559,15 @@ const WorkerPanel = ({
           
           <div class="header">
             <div class="company-details">
-              <div class="company-name">ADEQUATE CAPITAL LTD</div>
+              <div class="company-name">INTERVENTION CAPITAL LTD</div>
               <div class="slogan">You deserve nothing less</div>
               <div class="company-contact">
                 P.O. Box 253-00241, Kitengela<br/>
-                info@adequatecapital.co.ke
+                info@interventioncapital.co.ke
               </div>
             </div>
             <div class="logo-area">
-              <img src="${ADEQUATE_LOGO_BASE64}" alt="Logo" style="height: 60px; width: auto; display: block; margin-left: auto;" />
+              <img src="${INTERVENTION_LOGO_BASE64}" alt="Logo" style="height: 60px; width: 108px; display: block; margin-left: auto;" />
             </div>
           </div>
           
@@ -675,7 +675,7 @@ const WorkerPanel = ({
             <div class="net-val">${fmtKey(cumulativeEarnings)}</div>
             
             <div class="stamp-container">
-              <img src="${ADEQUATE_STAMP_BASE64}" alt="Stamp" style="width: 100%; height: auto; display: block;" />
+              <img src="${INTERVENTION_STAMP_BASE64}" alt="Stamp" style="width: 100%; height: auto; display: block;" />
               <div class="stamp-date">${today.split('T')[0].toUpperCase()}</div>
             </div>
           </div>
@@ -784,7 +784,7 @@ const WorkerPanel = ({
           </div>
           {(!isMobile && sideCollapsed) ? null : (
             <div style={{ opacity: sidebarOpen ? 1 : 0, transition: '0.25s', minWidth: 0 }}>
-              <div style={{ fontFamily: T.head, fontWeight: 900, fontSize: 13, letterSpacing: -0.2, lineHeight: 1.1, textTransform: 'uppercase', color: theme.color }}>Adequate<br/>Capital</div>
+              <div style={{ fontFamily: T.head, fontWeight: 900, fontSize: 13, letterSpacing: -0.2, lineHeight: 1.1, textTransform: 'uppercase', color: theme.color }}>Intervention<br/>Capital</div>
               <div style={{ fontSize: 9, fontWeight: 800, color: theme.color, opacity: 0.7, letterSpacing: 1.5, marginTop: 3, textTransform: 'uppercase' }}>{worker?.role || 'Worker'}</div>
             </div>
           )}
@@ -1331,7 +1331,7 @@ const WorkerPanel = ({
                                 .table td { padding: 14px; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
                                 .total-row { background: #f8fafc; font-weight: 900; }
                               </style></head><body>
-                                <div class="header"><div><div style="font-size: 11px; font-weight: 700; color: #64748b;">PAYMENT RECEIPT</div></div><div style="text-align: right;"><img src="${ADEQUATE_LOGO_BASE64}" alt="Adequate Capital" style="height: 70px; width: auto; display: block; margin-left: auto; margin-bottom: 4px;" /><b>Receipt #: ${row.mpesa_receipt || row.id}</b><br>${row.month}</div></div>
+                                <div class="header"><div><div style="font-size: 11px; font-weight: 700; color: #64748b;">PAYMENT RECEIPT</div></div><div style="text-align: right;"><img src="${INTERVENTION_LOGO_BASE64}" alt="Intervention Capital" style="height: 70px; width: 126px; display: block; margin-left: auto; margin-bottom: 4px;" /><b>Receipt #: ${row.mpesa_receipt || row.id}</b><br>${row.month}</div></div>
                                 <table class="table">
                                   <thead><tr><th>Description</th><th style="text-align: right;">Amount</th></tr></thead>
                                   <tbody>
