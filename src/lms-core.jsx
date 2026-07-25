@@ -781,7 +781,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
               © {new Date().getFullYear()} Intervention Capital Ltd. All rights reserved.
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>📞 0727625470</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>📞 0700000000</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>✉️ info@interventioncapital.co.ke</span>
             </div>
           </footer>
