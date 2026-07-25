@@ -317,12 +317,13 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
   const goBack=()=>{ if(screenHistory.length===0) return; const prev=screenHistory[screenHistory.length-1]; setForwardHistory(h=>[...h.slice(-9), screen]); setScreenHistory(h=>h.slice(0,-1)); setScreen(prev); setTimeout(scrollTop,30); };
   const goForward=()=>{ if(forwardHistory.length===0) return; const next=forwardHistory[forwardHistory.length-1]; setScreenHistory(h=>[...h.slice(-9), screen]); setForwardHistory(h=>h.slice(0,-1)); setScreen(next); setTimeout(scrollTop,30); };
 
-  // Sequential nav — scrolls through ADMIN_NAV in order, regardless of visit history
-  const _navIdx = ADMIN_NAV.findIndex(item => item.id === screen);
-  const navPrev = () => { if (_navIdx <= 0) return; navTo(ADMIN_NAV[_navIdx - 1].id); };
-  const navNext = () => { if (_navIdx < 0 || _navIdx >= ADMIN_NAV.length - 1) return; navTo(ADMIN_NAV[_navIdx + 1].id); };
+  // Sequential nav — scrolls through visibleNav in order, regardless of visit history
+  const visibleNav = ADMIN_NAV.filter(item => item.id === 'dashboard');
+  const _navIdx = visibleNav.findIndex(item => item.id === screen);
+  const navPrev = () => { if (_navIdx <= 0) return; navTo(visibleNav[_navIdx - 1].id); };
+  const navNext = () => { if (_navIdx < 0 || _navIdx >= visibleNav.length - 1) return; navTo(visibleNav[_navIdx + 1].id); };
   const canNavPrev = _navIdx > 0;
-  const canNavNext = _navIdx >= 0 && _navIdx < ADMIN_NAV.length - 1;
+  const canNavNext = _navIdx >= 0 && _navIdx < visibleNav.length - 1;
 
   // MODIFIED: Sync screen from URL on mount (Fixes refresh desync)
   useEffect(() => {
@@ -526,7 +527,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
               </div>
             </div>
           ) : (
-            ADMIN_NAV.map((item, idx) => navItem(item, idx, ADMIN_NAV))
+            visibleNav.map((item, idx) => navItem(item, idx, visibleNav))
           )}
           <div style={{ height: 16 }} />
         </nav>
@@ -578,7 +579,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
                 id="sidebar-back-btn"
                 onClick={navPrev}
                 disabled={!canNavPrev}
-                title={canNavPrev ? `Back to ${ADMIN_NAV[_navIdx - 1]?.l}` : 'First page'}
+                title={canNavPrev ? `Back to ${visibleNav[_navIdx - 1]?.l}` : 'First page'}
                 aria-label="Previous page"
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -598,7 +599,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
                 id="sidebar-forward-btn"
                 onClick={navNext}
                 disabled={!canNavNext}
-                title={canNavNext ? `Next: ${ADMIN_NAV[_navIdx + 1]?.l}` : 'Last page'}
+                title={canNavNext ? `Next: ${visibleNav[_navIdx + 1]?.l}` : 'Last page'}
                 aria-label="Next page"
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -622,7 +623,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
               <button
                 onClick={navPrev}
                 disabled={!canNavPrev}
-                title={canNavPrev ? `Back to ${ADMIN_NAV[_navIdx - 1]?.l}` : 'First page'}
+                title={canNavPrev ? `Back to ${visibleNav[_navIdx - 1]?.l}` : 'First page'}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: 32, height: 28, borderRadius: 8,
@@ -636,7 +637,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
               <button
                 onClick={navNext}
                 disabled={!canNavNext}
-                title={canNavNext ? `Next: ${ADMIN_NAV[_navIdx + 1]?.l}` : 'Last page'}
+                title={canNavNext ? `Next: ${visibleNav[_navIdx + 1]?.l}` : 'Last page'}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: 32, height: 28, borderRadius: 8,
