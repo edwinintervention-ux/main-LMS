@@ -20,7 +20,7 @@ const InterventionLogo = ({ size = 'md', dark = false }) => {
     />
   );
 };
-import { Lock, ShieldAlert, Mail, Smartphone, Check, Search as SearchIcon, ChevronRight, Menu, ChevronLeft, LogOut, Home, Calculator, Fingerprint, Zap, ShieldCheck, Moon, Sun, Flame, Leaf, Eclipse } from 'lucide-react';
+import { Lock, ShieldAlert, Mail, Smartphone, Check, Search as SearchIcon, ChevronRight, Menu, ChevronLeft, LogOut, Home, Calculator, Fingerprint, Zap, ShieldCheck, Moon, Sun, Eclipse } from 'lucide-react';
 import LoansTab from "@/modules/loans/LoansTab";
 import PaymentsTab from "@/modules/payments/PaymentsTab";
 import CollectionsTab from "@/modules/collections/CollectionsTab";
@@ -708,7 +708,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
             </button>
 
             <button onClick={toggleTheme} className="theme-toggle" aria-label="Toggle Theme" style={{background:T.card2,border:`1px solid ${T.border}`,color:T.dim,borderRadius:9,padding:'5px 10px',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',width:36,height:34}}>
-              {theme === 'dark' ? <Moon size={15} strokeWidth={2} /> : theme === 'dim' ? <Eclipse size={15} strokeWidth={2} /> : theme === 'orange' ? <Flame size={15} strokeWidth={2} /> : theme === 'green' ? <Leaf size={15} strokeWidth={2} /> : <Sun size={15} strokeWidth={2} />}
+              {theme === 'dark' ? <Moon size={15} strokeWidth={2} /> : theme === 'dim' ? <Eclipse size={15} strokeWidth={2} /> : <Sun size={15} strokeWidth={2} />}
             </button>
 
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: isMobile ? 4 : 7 }}>
@@ -1232,7 +1232,7 @@ const WorkerPortal = ({workers,setWorkers,loans,setLoans,customers,setCustomers,
         <div style={{fontFamily:T.head,color:T.accent,fontWeight:900,fontSize:14}}>{cfg.portalName || 'Intervention Capital'} — Worker Portal</div>
         <div style={{display:'flex',gap:9,alignItems:'center'}}>
           <button onClick={toggleTheme} aria-label="Toggle Theme" style={{background:T.card2,border:`1px solid ${T.border}`,color:T.muted,borderRadius:8,padding:'4px 10px',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',gap:6,marginRight:4}}>
-            {theme === 'dark' ? <Moon size={14} strokeWidth={2} /> : theme === 'dim' ? <Eclipse size={14} strokeWidth={2} /> : theme === 'orange' ? <Flame size={14} strokeWidth={2} /> : theme === 'green' ? <Leaf size={14} strokeWidth={2} /> : <Sun size={14} strokeWidth={2} />}
+            {theme === 'dark' ? <Moon size={14} strokeWidth={2} /> : theme === 'dim' ? <Eclipse size={14} strokeWidth={2} /> : <Sun size={14} strokeWidth={2} />}
             <span style={{fontSize:10,fontWeight:700,opacity:0.8}}>{theme.charAt(0).toUpperCase()+theme.slice(1)}</span>
           </button>
           <Av ini={curr?.avatar||curr?.name[0]} size={26} color={T.accent}/>
