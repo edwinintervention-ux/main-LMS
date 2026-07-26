@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
@@ -9,44 +9,17 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('acl_theme') || 'green';
-  });
+  const theme = 'green';
 
   useEffect(() => {
     const root = window.document.documentElement;
-
-    const applyTheme = (currentTheme) => {
-      root.setAttribute('data-theme', currentTheme);
-      
-      if (currentTheme === 'dark' || currentTheme === 'dim' || currentTheme === 'green') {
-        root.classList.add('dark'); // keep generic 'dark' class for some utilities
-        root.style.colorScheme = 'dark';
-      } else if (currentTheme === 'light') {
-        root.classList.remove('dark');
-        root.style.colorScheme = 'light';
-      }
-    };
-
-    applyTheme(theme);
-    localStorage.setItem('acl_theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => {
-      if (prev === 'light') return 'dim';
-      if (prev === 'dim') return 'dark';
-      if (prev === 'dark') return 'green';
-      return 'light';
-    });
-  };
-
-  const setExplicitTheme = (newTheme) => {
-    setTheme(newTheme);
-  };
+    root.setAttribute('data-theme', 'green');
+    root.classList.add('dark');
+    root.style.colorScheme = 'dark';
+  }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setExplicitTheme }}>
+    <ThemeContext.Provider value={{ theme }}>
       {children}
     </ThemeContext.Provider>
   );

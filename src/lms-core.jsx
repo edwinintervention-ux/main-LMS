@@ -213,7 +213,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 
 const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setWorkers,payments,setPayments,leads,setLeads,interactions,setInteractions,repossessedAssets,setRepossessedAssets,stkRequests,setStkRequests,b2cDisbursements,setB2cDisbursements,mpesaTransactions,setMpesaTransactions,targets,setTargets,salaryPayments,setSalaryPayments,workerDeductions,setWorkerDeductions,workerAdditions,setWorkerAdditions,auditLog,setAuditLog,unallocatedC2BCount,setUnallocatedC2BCount,onOpenCustomerProfile,onRefresh, initialScreen, cfg, setCfg, showToast}) => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const [screen,setScreen]=useState(initialScreen || 'dashboard');
   const isRecoveryLock = sessionStorage.getItem('acl_recovery_lock') === 'true';
   
@@ -708,9 +708,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
               <Calculator size={16}/>
             </button>
 
-            <button onClick={toggleTheme} className="theme-toggle" aria-label="Toggle Theme" style={{background:T.card2,border:`1px solid ${T.border}`,color:T.dim,borderRadius:9,padding:'5px 10px',fontSize:14,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',width:36,height:34}}>
-              {theme === 'dark' ? <Moon size={15} strokeWidth={2} /> : theme === 'dim' ? <Eclipse size={15} strokeWidth={2} /> : theme === 'green' ? <Leaf size={15} strokeWidth={2} /> : <Sun size={15} strokeWidth={2} />}
-            </button>
+
 
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: isMobile ? 4 : 7 }}>
               <button 
@@ -810,7 +808,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
 //  WORKER PORTAL
 // ═══════════════════════════════════════════
 const WorkerPortal = ({workers,setWorkers,loans,setLoans,customers,setCustomers,payments,setPayments,leads,setLeads,interactions,setInteractions,repossessedAssets,setRepossessedAssets,auditLog,setAuditLog,onBack,dataLoaded,onOpenCustomerProfile,unallocatedC2BCount,setUnallocatedC2BCount, cfg, showToast, worker, session}) => {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const { session: _authSession, worker: authWorker } = useAuth();
   const [loggedIn,setLoggedIn]=useState(false);
   const [curr,setCurr]=useState(null);
@@ -1232,10 +1230,7 @@ const WorkerPortal = ({workers,setWorkers,loans,setLoans,customers,setCustomers,
       <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:'10px 18px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={{fontFamily:T.head,color:T.accent,fontWeight:900,fontSize:14}}>{cfg.portalName || 'Intervention Capital'} — Worker Portal</div>
         <div style={{display:'flex',gap:9,alignItems:'center'}}>
-          <button onClick={toggleTheme} aria-label="Toggle Theme" style={{background:T.card2,border:`1px solid ${T.border}`,color:T.muted,borderRadius:8,padding:'4px 10px',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',gap:6,marginRight:4}}>
-            {theme === 'dark' ? <Moon size={14} strokeWidth={2} /> : theme === 'dim' ? <Eclipse size={14} strokeWidth={2} /> : theme === 'green' ? <Leaf size={14} strokeWidth={2} /> : <Sun size={14} strokeWidth={2} />}
-            <span style={{fontSize:10,fontWeight:700,opacity:0.8}}>{theme.charAt(0).toUpperCase()+theme.slice(1)}</span>
-          </button>
+
           <Av ini={curr?.avatar||curr?.name[0]} size={26} color={T.accent}/>
           <span style={{color:T.dim,fontSize:13}}>{curr?.name}</span>
           <Btn sm v='ghost' onClick={()=>{
