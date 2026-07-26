@@ -327,8 +327,115 @@ export const Styles = () => (
       --glass-blur: 20px;
     }
 
+    :root[data-theme='green'] {
+      --bg: #061e14;
+      --surface: #0a2e1f;
+      --card: #10402b;
+      --card2: #165239;
+      --border: #206d4b;
+      --hi: #308f64;
+      --accent: #2E7D32;
+      --accent-txt: #022c22;
+      --a-lo: rgba(46, 125, 50, 0.15);
+      --a-mid: rgba(46, 125, 50, 0.3);
+      --gold: #C49A2C;
+      --g-lo: rgba(196, 154, 44, 0.15);
+      --warn: #C49A2C;
+      --w-lo: rgba(196, 154, 44, 0.15);
+      --danger: #EF4444;
+      --d-lo: rgba(239, 68, 68, 0.15);
+      --ok: #34D399;
+      --o-lo: rgba(52, 211, 153, 0.15);
+      --blue: #3B82F6;
+      --b-lo: rgba(59, 130, 246, 0.15);
+      --purple: #8B5CF6;
+      --p-lo: rgba(139, 92, 246, 0.15);
+      --txt: #F8FAFC;
+      --dim: #CBD5E1;
+      --muted: #94A3B8;
+      --glass-bg: rgba(10, 46, 31, 0.85);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --glass-blur: 16px;
+    }
 
-      margin: 0; padding: 0;
+    /* Green Theme Sidebar */
+    [data-theme='green'] .main-sidebar {
+      background: #0a2e1f !important;
+      border-right: 1px solid #206d4b !important;
+    }
+    [data-theme='green'] .main-sidebar button,
+    [data-theme='green'] .main-sidebar button span,
+    [data-theme='green'] .main-sidebar button div,
+    [data-theme='green'] .main-sidebar div {
+      color: #F8FAFC !important;
+    }
+    [data-theme='green'] .main-sidebar button:hover {
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+    [data-theme='green'] .main-sidebar button.nb[style*="linear-gradient"] {
+      background: rgba(255, 255, 255, 0.15) !important;
+    }
+    [data-theme='green'] .main-sidebar button.nb[style*="linear-gradient"] span {
+      color: #10b981 !important;
+      font-weight: 800 !important;
+    }
+    [data-theme='green'] .main-sidebar button.nb[style*="linear-gradient"] span[style*="background:"] {
+      background: #10b981 !important;
+      color: #061e14 !important;
+    }
+    [data-theme='green'] .main-sidebar button[style*="danger"] {
+      background: rgba(239, 68, 68, 0.15) !important;
+      color: #EF4444 !important;
+    }
+    [data-theme='green'] .main-sidebar button[style*="danger"]:hover {
+      background: rgba(239, 68, 68, 0.25) !important;
+    }
+    [data-theme='green'] #sidebar-home-btn,
+    [data-theme='green'] #sidebar-back-btn,
+    [data-theme='green'] #sidebar-forward-btn {
+      background: rgba(255, 255, 255, 0.1) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      color: #F8FAFC !important;
+    }
+    [data-theme='green'] #sidebar-home-btn:hover,
+    [data-theme='green'] #sidebar-back-btn:hover,
+    [data-theme='green'] #sidebar-forward-btn:hover {
+      background: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    [data-theme='green'] tbody tr:nth-child(even) {
+      background: #0a2e1f !important;
+    }
+    [data-theme='green'] tbody tr:nth-child(odd) {
+      background: transparent !important;
+    }
+    [data-theme='green'] tbody tr.row-hover:hover {
+      background: #10402b !important;
+    }
+
+    /* Green theme: make all non-sidebar buttons and icons dark/readable */
+    [data-theme='green'] .btn-modern {
+      color: #F8FAFC !important;
+    }
+    [data-theme='green'] .btn-modern svg {
+      color: #F8FAFC !important;
+      stroke: #F8FAFC !important;
+    }
+    [data-theme='green'] td button,
+    [data-theme='green'] td .btn-modern,
+    [data-theme='green'] td svg {
+      color: #F8FAFC !important;
+      stroke: #F8FAFC !important;
+    }
+    [data-theme='green'] table button {
+      color: #F8FAFC !important;
+    }
+    [data-theme='green'] table button svg {
+      color: #F8FAFC !important;
+      stroke: #F8FAFC !important;
+    }
+
+    body, html {
       min-height: 100%;
       background: var(--bg);
       color: var(--txt);
