@@ -318,7 +318,7 @@ const AdminPanel = ({onLogout,loans,setLoans,customers,setCustomers,workers,setW
   const goForward=()=>{ if(forwardHistory.length===0) return; const next=forwardHistory[forwardHistory.length-1]; setScreenHistory(h=>[...h.slice(-9), screen]); setForwardHistory(h=>h.slice(0,-1)); setScreen(next); setTimeout(scrollTop,30); };
 
   // Sequential nav — scrolls through visibleNav in order, regardless of visit history
-  const visibleNav = ADMIN_NAV.filter(item => item.id === 'dashboard');
+  const visibleNav = ADMIN_NAV;
   const _navIdx = visibleNav.findIndex(item => item.id === screen);
   const navPrev = () => { if (_navIdx <= 0) return; navTo(visibleNav[_navIdx - 1].id); };
   const navNext = () => { if (_navIdx < 0 || _navIdx >= visibleNav.length - 1) return; navTo(visibleNav[_navIdx + 1].id); };
