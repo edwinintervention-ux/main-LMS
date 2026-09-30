@@ -1,5 +1,5 @@
 import { calculateStatutoryDeductions } from './taxCalculator';
-import { generatePayslipHTML, fmt, fmtM, T, now, ADEQUATE_STAMP_BASE64 } from '@/lms-common';
+import { generatePayslipHTML, fmt, fmtM, T, now, INTERVENTION_STAMP_BASE64 } from '@/lms-common';
 
 export const generateP9Form = (worker, salaryPayments, workerDeductions, workerAdditions, year, cfg) => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -57,7 +57,7 @@ export const generateP9Form = (worker, salaryPayments, workerDeductions, workerA
 
   const fc = (v) => Number(v || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const employerKra  = cfg && cfg.employerKraPin   ? cfg.employerKraPin   : 'NOT SET';
-  const employerName = cfg && cfg.portalName       ? cfg.portalName       : 'Adequate Capital Ltd';
+  const employerName = cfg && cfg.portalName       ? cfg.portalName       : 'Intervention Capital Ltd';
   const employerAddr = cfg && cfg.address          ? cfg.address          : '';
   const employeeKra  = worker && worker.kraPin     ? worker.kraPin        : 'NOT SET';
   const employeeNssf = worker && worker.nssfNumber ? worker.nssfNumber    : '-';
@@ -214,7 +214,7 @@ export const generateP9Form = (worker, salaryPayments, workerDeductions, workerA
     '</div>' +
     '<div class="sig-box" style="position:relative; display:flex; flex-direction:column; align-items:center;">' +
       '<div style="position:absolute; bottom:-5px; width:100px; height:100px; transform:rotate(-8deg); opacity:0.85; filter:saturate(2.5) contrast(1.8) brightness(0.9); pointer-events:none;">' +
-        '<img src="' + ADEQUATE_STAMP_BASE64 + '" alt="Stamp" style="width:100%; height:100%; display:block;" />' +
+        '<img src="' + INTERVENTION_STAMP_BASE64 + '" alt="Stamp" style="width:100%; height:100%; display:block;" />' +
         '<div style="position:absolute; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; font-family:\'Courier New\', Courier, monospace; font-size:5.5px; font-weight:bold; color:#dc2626; letter-spacing:-0.2px; padding-right:3px; padding-bottom:1px;">' +
           new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase().replace(/ /g, '-') +
         '</div>' +

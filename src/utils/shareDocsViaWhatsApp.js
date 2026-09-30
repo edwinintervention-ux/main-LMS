@@ -279,7 +279,7 @@ export async function shareDocsViaWhatsApp(loan, customer, agreementHTML, assetH
       `• Loan Agreement (PDF)`,
       `• Asset Declaration List (PDF)`,
       ``,
-      `– Adequate Capital Ltd`,
+      `– Intervention Capital Ltd`,
     ].join('\n');
 
     showToast('✅ Documents uploaded! Opening WhatsApp…', 'success', 4000);

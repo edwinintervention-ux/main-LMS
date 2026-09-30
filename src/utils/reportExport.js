@@ -1,4 +1,4 @@
-import { ADEQUATE_STAMP_BASE64, ADEQUATE_LOGO_BASE64 } from '@/lms-common';
+import { INTERVENTION_STAMP_BASE64, INTERVENTION_LOGO_BASE64 } from '@/lms-common';
 
 // Inlined helpers — avoids circular dependency with lms-common in production build
 const fmt = (n) => 'KES ' + (Number(n) || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -66,8 +66,8 @@ const BRAND_STYLE = `
 `;
 
 function buildHTML(title, subtitle, summaryBoxes, headers, rows, filename) {
-  const stampSrc = ADEQUATE_STAMP_BASE64 || '';
-  const logoSrc = ADEQUATE_LOGO_BASE64 || '';
+  const stampSrc = INTERVENTION_STAMP_BASE64 || '';
+  const logoSrc = INTERVENTION_LOGO_BASE64 || '';
   const today = new Date().toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
   const html = `
     <!DOCTYPE html>

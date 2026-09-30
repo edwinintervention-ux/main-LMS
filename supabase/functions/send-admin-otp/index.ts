@@ -110,7 +110,7 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: "No phone number configured for MFA" }), { status: 400, headers: CORS });
     }
 
-    let smsMessage = `Your Adequate Capital login code is: ${otp}. Expires in 2 minutes.`;
+    let smsMessage = `Your Intervention Capital login code is: ${otp}. Expires in 2 minutes.`;
     
     // WebOTP API formatting: Standard @domain #OTP on the last line
     if (origin) {

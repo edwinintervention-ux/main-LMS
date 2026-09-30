@@ -486,7 +486,7 @@ const DashboardTab = ({adminUser,loans,setLoans,customers,setCustomers,payments,
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 16 }}>
-          <LiveClock />
+          
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {totalTgt > 0 && (
               <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
