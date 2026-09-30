@@ -1,186 +1,274 @@
-import CustomerProfile from "@/modules/customers/CustomerProfile";
-import React, { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react';
-import { 
-  TrendingUp, Calendar, AlertTriangle, CreditCard, XCircle, ClipboardList, 
-  Users, UserCog, Lock, BarChart, Download, FileSpreadsheet, FileText, 
-  FileCode, Filter, ChevronRight, PieChart, Activity, ShieldCheck, Search as SearchIcon,
-  Landmark
-} from 'lucide-react';
-import { T, SC, RC, SFX, Card, CH, KPI, DT, Btn, Badge, Av, Bar, BackBtn, RefreshBtn,
-  FI, PhoneInput, NumericInput, Search, Pills, Alert, Dialog, ConfirmDialog, ToastContainer,
-  LoanModal, LoanForm, RepayTracker, ModuleHeader,
-  fmt, fmtM, now, uid, ts, escHtml, toCSV, dlCSV, buildFullBackup,
-  calculateLoanStatus,
-  sbWrite, sbInsert,
-  toSupabaseLoan, toSupabaseCustomer, toSupabasePayment, toSupabaseInteraction,
-  generateLoanAgreementHTML, generateAssetListHTML, downloadLoanDoc,
-  getSecConfig,
-  useContactPopup, useToast, useReminders, useModalLock,
-  dlReportCSV, dlReportPDF, dlReportWord, buildReportData } from '@/lms-common';
-import WorkerPanel from '@/modules/workers/WorkerPanel';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import {  Card, T, ModuleHeader , normProduct, getProductBaseRate, getProductDays } from '@/lms-common';
+import { FileText, PieChart, BarChart2, Activity, Users, Shield, TrendingUp, AlertOctagon, ChevronDown } from 'lucide-react';
+import BusinessStatement from './BusinessStatement';
+import CustomerStatement from './CustomerStatement';
+import CollectionsReport from './CollectionsReport';
+import DisbursementsReport from './DisbursementsReport';
+import PortfolioReport from './PortfolioReport';
+import PARReport from './PARReport';
+import RevenueReport from './RevenueReport';
+import ProfitLossReport from './ProfitLossReport';
+import RevenueProfitability from './RevenueProfitability';
+import CBKReport from './CBKReport';
+import PortfolioAnalytics from './PortfolioAnalytics';
 
-const ReportsTab = ({loans,customers,payments,workers,auditLog,showToast=()=>{}, addAudit=()=>{}, preSelected=null}) => {
-  const [activeMenu,setActiveMenu]=useState(preSelected);
-  const [pickedStart, _setPickedStart] = useState(now().slice(0, 7) + '-01'); 
-  const [pickedEnd, _setPickedEnd] = useState(now());
+export default function ReportsTab({ loans, customers, payments, currentUser, userRole, auditLog, workers }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeReport, setActiveReport] = useState(() => searchParams.get('sub') || 'business-statement');
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [productFilter, setProductFilter] = useState('All');
 
-  const setPickedStart = (val) => {
-    _setPickedStart(val);
-    if (pickedEnd && val > pickedEnd) _setPickedEnd(val);
+  const filteredLoans = React.useMemo(() => {
+    if (productFilter === 'All') return loans;
+    return loans.filter(l => normProduct(l.product) === normProduct(productFilter));
+  }, [loans, productFilter]);
+
+  const filteredPayments = React.useMemo(() => {
+    if (productFilter === 'All') return payments;
+    const loanMap = {};
+    loans.forEach(l => { loanMap[l.id] = (l.product || 'Swift30'); });
+    return payments.filter(p => !p.loanId || normProduct(loanMap[p.loanId]) === normProduct(productFilter));
+  }, [payments, loans, productFilter]);
+
+  useEffect(() => {
+    const sub = searchParams.get('sub');
+    if (sub && sub !== activeReport) setActiveReport(sub);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const handleSetReport = (id) => {
+    setActiveReport(id);
+    setSearchParams({ tab: 'reports', sub: id }, { replace: true });
+    setMenuOpen(false);
   };
 
-  const setPickedEnd = (val) => {
-    _setPickedEnd(val);
-    if (pickedStart && val < pickedStart) setPickedStart(val);
-  };
-  const [appliedStart, setAppliedStart] = useState(now().slice(0, 7) + '-01');
-  const [appliedEnd, setAppliedEnd] = useState(now());
-
-  const data = {loans, customers, payments, workers, auditLog};
-  const { show: toast } = useToast();
-  
-  const reportGroups = useMemo(() => [
+  const reportMenu = [
     {
-      group: 'Financial Intelligence',
-      rows: [
-        {id:'loan-portfolio', label:'Global Portfolio', icon:ClipboardList, desc:`Comprehensive snapshot of all lifetime loan disbursements and balances.`, color: T.accent},
-        {id:'financial', label:'Financial Summary', icon:TrendingUp, desc:`High-level aggregate metrics of total disbursements, collections, and overall portfolio health.`, color: T.ok},
-        {id:'overdue', label:'Arrears & Default', icon:AlertTriangle, desc:`Risk assessment report of loans past their maturity date or in default.`, color: T.danger},
-        {id:'due-today', label:'Repayment Schedule', icon:Calendar, desc:'Forecast of installments and repayments expected in the current period.', color: T.blue},
-        {id:'payments-today', label:'Transaction Ledger', icon:CreditCard, desc:`Full audit trail of all manual and M-Pesa repayment entries.`, color: T.ok},
-        {id:'salary-payouts', label:'Salary Disbursements', icon:Landmark, desc:`Audit ledger of all B2C payroll and commission payments to staff.`, color: T.accent},
+      group: 'Financial Statements',
+      items: [
+        { id: 'business-statement', label: 'Business Statement', icon: FileText },
+        { id: 'customer-statements', label: 'Customer Statements', icon: Users },
       ]
     },
     {
-      group: 'Registry & Workforce',
-      rows: [
-        {id:'customers', label:'Customer Profiles', icon:Users, desc:`Master list of all registered borrowers with KYC and risk statuses.`, color: T.accent},
-        {id:'staff', label:'Worker Performance', icon:UserCog, desc:`Efficiency and collection speed metrics for all administrative officers.`, color: T.blue},
+      group: 'Financial Reports',
+      items: [
+        { id: 'revenue-profitability', label: 'Revenue & Profitability', icon: TrendingUp },
+        { id: 'collections', label: 'Collections', icon: Activity },
+        { id: 'disbursements', label: 'Disbursements', icon: TrendingUp },
+        { id: 'revenue', label: 'Revenue (Detailed)', icon: BarChart2 },
+        { id: 'profit-loss', label: 'Profit & Loss (Detailed)', icon: PieChart },
       ]
     },
     {
-      group: 'System & Governance',
-      rows: [
-        {id:'audit', label:'Surveillance Log', icon:Lock, desc:`Security audit trail of all system modifications and access events.`, color: T.muted},
+      group: 'Portfolio Reports',
+      items: [
+        { id: 'portfolio-analytics', label: 'Portfolio Analytics (V1)', icon: PieChart },
+        { id: 'portfolio', label: 'Portfolio Summary', icon: Shield },
+        { id: 'par', label: 'PAR / Aging', icon: AlertOctagon },
+        { id: 'cbk-regulatory', label: 'CBK Regulatory Report', icon: FileText },
       ]
     }
-  ], []);
+  ];
 
-  const financialStats = useMemo(() => {
-    const totalOut = loans.filter(l => l.status !== 'Settled').reduce((s, l) => s + l.balance, 0);
-    const healthy = loans.filter(l => l.status === 'Active').length;
-    const par = loans.filter(l => l.status === 'Overdue').length;
-    return { 
-        exposure: totalOut, 
-        rate: Math.round((healthy / (healthy + par || 1)) * 100),
-        count: healthy + par
-    };
-  }, [loans]);
+  const allItems = reportMenu.flatMap(g => g.items);
+  const activeLabel = allItems.find(i => i.id === activeReport)?.label || 'Select Report';
 
-  useEffect(() => { setActiveMenu(preSelected); }, [preSelected]);
-
-  const handleExport = (r, format, dlFn) => {
-    const rData = buildReportData(r.id, data, { startDate: appliedStart, endDate: appliedEnd });
-    dlFn(rData);
-    addAudit('Report Exported', r.id, `Format: ${format} | Date Range: ${appliedStart} to ${appliedEnd}`);
-    toast(`Successfully exported ${r.label} as ${format}`, 'ok');
+  const renderContent = () => {
+    if (activeReport === 'business-statement')   return <BusinessStatement loans={filteredLoans} customers={customers} payments={filteredPayments} />;
+    if (activeReport === 'customer-statements')  return <CustomerStatement loans={filteredLoans} customers={customers} payments={filteredPayments} />;
+    if (activeReport === 'revenue-profitability')return <div style={{maxWidth: 1000, margin: '0 auto'}}><RevenueProfitability loans={filteredLoans} customers={customers} payments={filteredPayments} /></div>;
+    if (activeReport === 'collections')          return <CollectionsReport payments={filteredPayments} customers={customers} />;
+    if (activeReport === 'disbursements')        return <DisbursementsReport loans={filteredLoans} customers={customers} />;
+    if (activeReport === 'revenue')              return <RevenueReport loans={filteredLoans} customers={customers} payments={filteredPayments} />;
+    if (activeReport === 'profit-loss')          return <ProfitLossReport loans={filteredLoans} customers={customers} payments={filteredPayments} />;
+    if (activeReport === 'portfolio-analytics')  return <PortfolioAnalytics loans={filteredLoans} customers={customers} payments={filteredPayments} />;
+    if (activeReport === 'portfolio')            return <PortfolioReport loans={filteredLoans} customers={customers} payments={filteredPayments} />;
+    if (activeReport === 'par')                  return <PARReport loans={filteredLoans} customers={customers} payments={filteredPayments} />;
+    if (activeReport === 'cbk-regulatory')       return <CBKReport loans={filteredLoans} customers={customers} payments={filteredPayments} />;
+    return (
+      <Card style={{ padding: 60, textAlign: 'center', color: T.muted }}>
+        <FileText size={40} style={{ margin: '0 auto 15px', opacity: 0.3 }} />
+        <div style={{ fontWeight: 600, fontSize: 16 }}>{allItems.find(i => i.id === activeReport)?.label} Module</div>
+        <div style={{ fontSize: 13, marginTop: 5 }}>This reporting module is currently under development.</div>
+      </Card>
+    );
   };
 
-  const setRange = (days) => {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(end.getDate() - days);
-    setPickedStart(start.toISOString().split('T')[0]);
-    setPickedEnd(end.toISOString().split('T')[0]);
-    toast(`Preset: Last ${days} Days`, 'info');
-  };
-
-  return (
-    <div className='fu'>
-        <ModuleHeader 
-            title={<><BarChart size={22} style={{marginRight:10, verticalAlign: 'middle', marginTop: -4}}/> Advanced Reports</>}
-            sub="Generate high-fidelity financial insights, performance metrics, and regulatory compliance exports."
-        />
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-            <KPI label="Total Active Assets" value={fmtM(financialStats.exposure)} icon={PieChart} color={T.accent} />
-            <KPI label="Portfolio Health" value={financialStats.rate + '%'} sub="Standard Collection Rate" icon={Activity} color={financialStats.rate > 85 ? T.ok : T.warn} />
-            <KPI label="Reporting Capacity" value={financialStats.count} sub="Records in Scope" icon={ShieldCheck} />
-            <KPI label="System Status" value="Online" sub="Real-time Data Fetch" icon={Activity} color={T.ok} />
-        </div>
-
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 16, padding: '20px 24px', marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: T.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.accent }}>
-                    <Filter size={20} />
-                </div>
-                <div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: T.txt }}>Temporal Filter</div>
-                    <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                        <button onClick={() => setRange(7)} style={{ background: 'none', border: 'none', color: T.dim, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>7D</button>
-                        <button onClick={() => setRange(30)} style={{ background: 'none', border: 'none', color: T.dim, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>30D</button>
-                        <button onClick={() => setRange(90)} style={{ background: 'none', border: 'none', color: T.dim, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>90D</button>
-                    </div>
-                </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <label style={{ fontSize: 10, fontWeight: 800, color: T.muted, textTransform: 'uppercase' }}>Period Start</label>
-                        <input type='date' value={pickedStart} onChange={e=>setPickedStart(e.target.value)} 
-                            style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', color: T.txt, fontSize: 12, fontWeight: 600, outline: 'none' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <label style={{ fontSize: 10, fontWeight: 800, color: T.muted, textTransform: 'uppercase' }}>Period End</label>
-                        <input type='date' value={pickedEnd} onChange={e=>setPickedEnd(e.target.value)} 
-                            style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', color: T.txt, fontSize: 12, fontWeight: 600, outline: 'none' }} />
-                    </div>
-                </div>
-                <Btn onClick={() => { setAppliedStart(pickedStart); setAppliedEnd(pickedEnd); toast('Range Updated', 'ok'); }} icon={SearchIcon}>Apply Filter</Btn>
-            </div>
-        </div>
-
-        {reportGroups.map((group, idx) => (
-            <div key={idx} style={{ marginBottom: 40 }}>
-                <div style={{ fontSize: 11, fontWeight: 850, color: T.dim, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    {group.group} <div style={{ height: 1, flex: 1, background: T.border }} />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-                    {group.rows.map(r => {
-                        const rData = buildReportData(r.id, data, { startDate: appliedStart, endDate: appliedEnd });
-                        const Icon = r.icon;
-                        return (
-                            <Card key={r.id} style={{ padding: 0, overflow: 'hidden', border: activeMenu === r.id ? `1px solid ${T.accent}` : undefined }}>
-                                <div style={{ padding: '20px 24px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                                        <div style={{ width: 44, height: 44, borderRadius: 14, background: T.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', color: r.color, border: `1px solid ${T.border}` }}>
-                                            <Icon size={22} />
-                                        </div>
-                                        <Badge color={T.surface} style={{ border: `1px solid ${T.border}`, color: T.dim }}>{rData.rows.length} records</Badge>
-                                    </div>
-                                    <div style={{ color: T.txt, fontWeight: 800, fontSize: 16, marginBottom: 6 }}>{r.label}</div>
-                                    <div style={{ color: T.muted, fontSize: 12, lineHeight: 1.5, marginBottom: 20 }}>{r.desc}</div>
-                                    
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                                        <button onClick={() => handleExport(r, 'EXCEL', dlReportCSV)} style={{ background: T.surface, border: `1px solid ${T.border}`, color: T.txt, borderRadius: 10, padding: '10px 4px', fontSize: 10, fontWeight: 800, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                                            <FileSpreadsheet size={16} color={T.ok} /> EXCEL
-                                        </button>
-                                        <button onClick={() => handleExport(r, 'PDF', dlReportPDF)} style={{ background: T.surface, border: `1px solid ${T.border}`, color: T.txt, borderRadius: 10, padding: '10px 4px', fontSize: 10, fontWeight: 800, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                                            <FileText size={16} color={T.danger} /> PDF
-                                        </button>
-                                        <button onClick={() => handleExport(r, 'WORD', dlReportWord)} style={{ background: T.surface, border: `1px solid ${T.border}`, color: T.txt, borderRadius: 10, padding: '10px 4px', fontSize: 10, fontWeight: 800, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                                            <FileCode size={16} color={T.blue} /> WORD
-                                        </button>
-                                    </div>
-                                </div>
-                            </Card>
-                        );
-                    })}
-                </div>
-            </div>
-        ))}
+  const renderProductFilter = () => (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 16, overflowX: 'auto', paddingBottom: 4 }}>
+      {['All', 'Swift30', 'Swift15', 'Flex60', 'FlexSure'].map(p => (
+        <button
+          key={p}
+          onClick={() => setProductFilter(p)}
+          style={{
+            padding: '5px 14px',
+            borderRadius: 20,
+            border: productFilter === p ? '2px solid var(--accent)' : '2px solid var(--border)',
+            background: productFilter === p ? 'var(--a-lo)' : 'transparent',
+            color: productFilter === p ? 'var(--accent)' : 'var(--muted)',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          {p !== 'All' && (
+            <img 
+              src={`/${p.toLowerCase()}.png`} 
+              alt={p} 
+              style={{ height: 16, objectFit: 'contain' }} 
+              onError={e => { e.target.style.display = 'none'; }} 
+            />
+          )}
+          {p === 'All' ? 'All Products' : p}
+        </button>
+      ))}
     </div>
   );
-};
-export default ReportsTab;
+
+  // ── MOBILE LAYOUT ───────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <div className='fu' style={{ paddingBottom: 80 }}>
+        <ModuleHeader
+          title="Reports & Statements"
+          sub="Financial ledgers and management reporting"
+          icon={FileText}
+        />
+        {renderProductFilter()}
+
+        {/* Dropdown selector */}
+        <div style={{ position: 'relative', marginBottom: 16 }}>
+          <div
+            onClick={() => setMenuOpen(o => !o)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '11px 14px', borderRadius: 10, cursor: 'pointer',
+              background: T.card, border: `1px solid ${T.border}`,
+              fontWeight: 600, fontSize: 14, color: T.txt
+            }}
+          >
+            <span>{activeLabel}</span>
+            <ChevronDown
+              size={16}
+              color={T.dim}
+              style={{ transform: menuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+            />
+          </div>
+
+          {menuOpen && (
+            <div style={{
+              position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
+              background: T.card, border: `1px solid ${T.border}`, borderRadius: 10,
+              marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.35)', overflow: 'hidden'
+            }}>
+              {reportMenu.map((group, idx) => (
+                <div key={idx}>
+                  <div style={{
+                    padding: '8px 14px 4px', fontSize: 10, fontWeight: 700,
+                    color: T.muted, textTransform: 'uppercase', letterSpacing: 0.5,
+                    background: T.bg2
+                  }}>
+                    {group.group}
+                  </div>
+                  {group.items.map(item => {
+                    const Icon = item.icon;
+                    const isActive = activeReport === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleSetReport(item.id)}
+                        style={{
+                          padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 10,
+                          cursor: 'pointer', fontSize: 13,
+                          fontWeight: isActive ? 600 : 400,
+                          color: isActive ? T.accent : T.txt,
+                          background: isActive ? T.accent + '15' : 'transparent',
+                        }}
+                      >
+                        <Icon size={14} color={isActive ? T.accent : T.dim} />
+                        {item.label}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Content — full width */}
+        <div style={{ minWidth: 0 }}>
+          {renderContent()}
+        </div>
+      </div>
+    );
+  }
+
+  // ── DESKTOP LAYOUT ──────────────────────────────────────────────
+  return (
+    <div className='fu' style={{ paddingBottom: 60 }}>
+      <ModuleHeader
+        title="Reports & Statements"
+        sub="Financial ledgers and management reporting based on strict transaction data"
+        icon={FileText}
+      />
+      {renderProductFilter()}
+
+      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+        {/* Sidebar */}
+        <div style={{ width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 15 }}>
+          {reportMenu.map((group, idx) => (
+            <Card key={idx} style={{ padding: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, paddingLeft: 8 }}>
+                {group.group}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {group.items.map(item => {
+                  const Icon = item.icon;
+                  const isActive = activeReport === item.id;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => handleSetReport(item.id)}
+                      style={{
+                        padding: '8px 12px', borderRadius: 6, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        fontWeight: isActive ? 600 : 500,
+                        color: isActive ? T.accent : T.txt,
+                        background: isActive ? T.accent + '15' : 'transparent',
+                        transition: 'background 0.2s', fontSize: 13
+                      }}
+                      onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = T.bg2; }}
+                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <Icon size={14} color={isActive ? T.accent : T.dim} />
+                      {item.label}
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Content Area */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {renderContent()}
+        </div>
+      </div>
+    </div>
+  );
+}

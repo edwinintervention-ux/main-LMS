@@ -10,8 +10,12 @@
  * The LMS core handles its own routing (admin-login / admin / worker modes)
  * and will automatically integrate Supabase auth when credentials are present.
  */
+import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import LMSApp from '@/lms-core';
+import CustomerPortal from '@/pages/CustomerPortal';
+import DocDownloadPage from '@/pages/DocDownloadPage';
+import PwaInstallPrompt from '@/components/PwaInstallPrompt';
 
 // Full-screen loading spinner shown while Supabase resolves the session
 function AppLoader() {
@@ -35,6 +39,30 @@ function AppLoader() {
 
 export default function App() {
   const { loading, error } = useAuth();
+  const pathname = window.location.pathname;
+
+  // Handle customer document downloads: /docs/:loanId
+  if (pathname.startsWith('/docs')) {
+    const parts = pathname.split('/').filter(Boolean);
+    const loanId = parts[1] || '';
+    return <DocDownloadPage loanId={loanId} />;
+  }
+
+  // Handle payment instructions: /pay
+  if (pathname.startsWith('/pay')) {
+    const PayPage = React.lazy(() => import('@/pages/PayPage'));
+    return (
+      <React.Suspense fallback={<AppLoader />}>
+        <PayPage />
+      </React.Suspense>
+    );
+  }
+
+  // Handle customer portal
+  if (pathname.startsWith('/portal')) {
+    return <CustomerPortal />;
+  }
+
   if (error && error.includes("Supabase configuration is missing")) {
     return (
       <div style={{
@@ -50,7 +78,12 @@ export default function App() {
     );
   }
   if (loading) return <AppLoader />;
-  return <LMSApp />;
+  return (
+    <>
+      <LMSApp />
+      <PwaInstallPrompt />
+    </>
+  );
 }
 
 // Trigger build refresh
