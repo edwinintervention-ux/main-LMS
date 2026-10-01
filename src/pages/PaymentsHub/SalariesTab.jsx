@@ -10,11 +10,24 @@ const SalariesTab = ({ workers = [], salaryPayments = [], setSalaryPayments, cus
   const [deductionModal, setDeductionModal] = useState(null);
   const [additionModal, setAdditionModal] = useState(null);
   const [helbModal, setHelbModal] = useState(null); // worker object
+  
+  // Custom Month Selector logic
+  const [selectedMonth, setSelectedMonth] = useState(now().slice(0, 7));
+  const monthOptions = useMemo(() => {
+    const opts = [];
+    const d = new Date();
+    for(let i=0; i<6; i++) {
+      const mStr = d.toISOString().slice(0, 7);
+      opts.push({ val: mStr, label: new Date(d.getFullYear(), d.getMonth(), 1).toLocaleString('default', { month: 'long', year: 'numeric' }) });
+      d.setMonth(d.getMonth() - 1);
+    }
+    return opts;
+  }, []);
 
   const stats = useMemo(() => {
     const totalPaid = salaryPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
     const monthPaid = salaryPayments
-      .filter(p => p.month === now().slice(0, 7))
+      .filter(p => p.month === selectedMonth)
       .reduce((s, p) => s + (Number(p.amount) || 0), 0);
     const pendingCount = salaryPayments.filter(p => p.status === 'Pending').length;
     
@@ -29,7 +42,7 @@ const SalariesTab = ({ workers = [], salaryPayments = [], setSalaryPayments, cus
       try {
         const { supabase } = await import('@/config/supabaseClient');
         const counts = {};
-        const currentMonth = now().slice(0, 7); // e.g. "2024-04"
+        const currentMonth = selectedMonth; // e.g. "2024-04"
         const monthStart = `${currentMonth}-01`;
         
         for (const w of workers) {
@@ -73,13 +86,13 @@ const SalariesTab = ({ workers = [], salaryPayments = [], setSalaryPayments, cus
       }
     };
     runDirectSync();
-  }, [workers]);
+  }, [workers, selectedMonth]);
 
   const payrollData = useMemo(() => {
     return workers.map(w => {
       const wIdStr = String(w.id || '').trim().toLowerCase();
       const wNmStr = String(w.name || '').trim().toLowerCase();
-      const currentMonth = now().slice(0, 7);
+      const currentMonth = selectedMonth;
 
       let estimatedEarned = 0;
       let progress = 0;
@@ -227,7 +240,7 @@ const SalariesTab = ({ workers = [], salaryPayments = [], setSalaryPayments, cus
     try {
       const { supabase } = await import('@/config/supabaseClient');
       const { data, error } = await supabase.from('worker_deductions').insert([{
-        worker_id: deductionModal.id, amount, reason, month: now().slice(0, 7)
+        worker_id: deductionModal.id, amount, reason, month: selectedMonth
       }]).select().single();
       if (error) throw error;
       setWorkerDeductions(prev => [data, ...prev]);
@@ -246,7 +259,7 @@ const SalariesTab = ({ workers = [], salaryPayments = [], setSalaryPayments, cus
     try {
       const { supabase } = await import('@/config/supabaseClient');
       const { data, error } = await supabase.from('worker_additions').insert([{
-        worker_id: additionModal.id, amount, reason, month: now().slice(0, 7)
+        worker_id: additionModal.id, amount, reason, month: selectedMonth
       }]).select().single();
       if (error) throw error;
       setWorkerAdditions(prev => [data, ...prev]);
@@ -301,7 +314,7 @@ const SalariesTab = ({ workers = [], salaryPayments = [], setSalaryPayments, cus
     // We use a two-pass approach because PAYE depends on gross. Since PAYE = 0 for most low earners
     // we run one pass with a gross estimate, recalculate statutory, then finalize.
     const paymentMonth = payment.month || (payment.created_at || '').slice(0, 7);
-    const currentMonth = now().slice(0, 7);
+    const currentMonth = selectedMonth;
     const isCurrentMonth = paymentMonth === currentMonth;
 
     let baseGross;
@@ -727,7 +740,7 @@ const SalariesTab = ({ workers = [], salaryPayments = [], setSalaryPayments, cus
                <div style={{ width: 8, height: 8, borderRadius: '50%', background: T.ok }} /> Month Disbursements
             </div>
             <div style={{ fontSize: 42, fontWeight: 950, color: T.txt, letterSpacing: '-0.03em' }}>{fmtM(stats.monthPaid)}</div>
-            <div style={{ fontSize: 13, color: T.dim, marginTop: 16, fontWeight: 700 }}>Period: <span style={{ color: T.txt }}>{now().slice(0, 7)}</span></div>
+            <div style={{ fontSize: 13, color: T.dim, marginTop: 16, fontWeight: 700 }}>Period: <span style={{ color: T.txt }}>{selectedMonth}</span></div>
          </div>
 
          <div className="glass-card" style={{ position: 'relative', overflow: 'hidden' }}>
@@ -863,7 +876,7 @@ const SalariesTab = ({ workers = [], salaryPayments = [], setSalaryPayments, cus
             <FI label="Addition Amount (KES)" type="number" name="amount" placeholder="e.g. 5000" req />
             <FI label="Reason / Allowance Type" type="text" name="reason" placeholder="e.g. Bonus, Ex Gratia" req />
             <div style={{ background: `${T.ok}15`, color: T.ok, padding: 12, borderRadius: 8, fontSize: 13, marginBottom: 20 }}>
-              This amount will be added to the worker's gross earnings for {now().slice(0, 7)} before statutory deductions.
+              This amount will be added to the worker's gross earnings for {selectedMonth} before statutory deductions.
             </div>
             <Btn submit full loading={loading}>Apply Addition to Payroll</Btn>
           </form>
